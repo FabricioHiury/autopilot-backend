@@ -2,7 +2,6 @@
   "name": "autopilot-back",
   "version": "0.0.1",
   "description": "Core CRM API for AutoPilot CRM",
-  "author": "Pináculo Digital",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
