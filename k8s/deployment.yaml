@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autopilot-back
+  namespace: autopilot
+  labels:
+    app: autopilot-back
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: autopilot-back
+  template:
+    metadata:
+      labels:
+        app: autopilot-back
+    spec:
+      imagePullSecrets:
+        - name: docker-hub-secret
+      containers:
+        - name: autopilot-back
+          image: nadice/autopilot-back:f887364add68721c18d0e79664eccb397a1f3762
+          ports:
+            - containerPort: 3003
+              name: http
+          envFrom:
+            - secretRef:
+                name: autopilot-back-env
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

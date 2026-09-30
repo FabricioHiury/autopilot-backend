@@ -1,0 +1,789 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id                       String                     @id @default(uuid())
+  email                    String                     @unique @db.VarChar(255)
+  senha                    String                     @db.VarChar(200)
+  status                   String                     @default("pendente")
+  perfil                   String                     @default("usuario")
+  criadoEm                 DateTime                   @default(now()) @map("criado_em")
+  atualizadoEm             DateTime                   @updatedAt @map("atualizado_em")
+  nome                     String?
+  urlFoto                  String?                    @map("url_foto")
+  emailConfirmado          Boolean                    @default(false) @map("email_confirmado")
+  tokenConfirmacaoEmail    String?                    @map("token_confirmacao_email")
+  tokenExpiraEm            DateTime?                  @map("token_expira_em")
+  expoPushToken            String?                    @map("expo_push_token")
+  colaborador              Colaborador?
+  comentariosAtendimento   ComentariosAtendimento[]
+  LogAtividadesAtendimento LogAtividadesAtendimento[]
+  lojista                  Lojista?
+  mensagem                 Mensagem[]
+  notificacoes             Notificacao[]
+  permissao                Permissao[]
+  respostasTicket          RespostaTicket[]
+  SuspensaoAtendimento     SuspensaoAtendimento[]
+  ticketHistorico          TicketHistorico[]
+  tickets                  TicketSuporte[]
+
+  @@map("usuario")
+}
+
+model Loja {
+  id                         String                        @id @default(uuid())
+  idLojista                  String                        @unique @map("id_lojista")
+  cnpj                       String                        @unique
+  nomeEmpresa                String                        @map("nome_empresa")
+  inscricaoMunicipal         String?                       @map("inscricao_municipal")
+  inscricaoEstadual          String?                       @map("inscricao_estadual")
+  regimeTributario           String?                       @map("regime_tributario")
+  portalEmpresa              String?                       @map("portal_da_empresa")
+  atividadePrincipal         String?                       @map("atividade_principal")
+  descricaoAtividade         String?                       @map("descricao_atividade")
+  criadoEm                   DateTime                      @default(now()) @map("criado_em")
+  atualizadoEm               DateTime                      @updatedAt @map("atualizado_em")
+  urlFoto                    String?                       @map("url_foto")
+  wppConfigurado             Boolean                       @default(false) @map("wpp_configurado")
+  wppInstancia               String?                       @map("wpp_instancia")
+  wppApiType                 String?                       @default("unofficial") @map("wpp_api_type")
+  wppOfficialWabaId          String?                       @map("wpp_official_waba_id")
+  wppOfficialPhoneNumberId   String?                       @map("wpp_official_phone_number_id")
+  wppOfficialAccessToken     String?                       @map("wpp_official_access_token")
+  wppOfficialVerifyToken     String?                       @map("wpp_official_verify_token")
+  wppOfficialPhone           String?                       @map("wpp_official_phone")
+  distribuicaoAutomatica     Boolean                       @default(false) @map("distribuicao_automatica")
+  integracoesLiberadas       Boolean?                      @default(false) @map("integracoes_liberadas")
+  assinatura                 Assinatura?
+  atendimento                Atendimento[]
+  atendimentoResponsaveis    AtendimentoResponsaveis[]
+  cargos                     Cargo[]
+  chat                       Chat[]
+  ChatResponsaveis           ChatResponsaveis[]
+  cliente                    Cliente[]
+  colaborador                Colaborador[]
+  atendimentosCompartilhados CompartilhamentoAtendimento[]
+  contatoLoja                ContatoLoja[]
+  enderecoLoja               EnderecoLoja[]
+  historicoLoja              HistoricoLoja[]
+  lojista                    Lojista                       @relation(fields: [idLojista], references: [id], onDelete: Cascade)
+  tags                       Tag[]
+  tickets                    TicketSuporte[]
+  mensagemPadraos            MensagemPadrao[]
+
+  @@map("loja")
+}
+
+model Cargo {
+  id              String        @id @default(uuid())
+  idLoja          String        @map("id_loja")
+  cargo           String
+  funcionalidades String
+  loja            Loja          @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  colaboradores   Colaborador[] @relation("cargo_colaborador")
+
+  @@unique([idLoja, cargo])
+  @@map("cargo")
+}
+
+model HistoricoLoja {
+  id         String   @id @default(uuid())
+  idLoja     String   @map("id_loja")
+  tipoEvento String   @map("tipo_evento")
+  descricao  String
+  criadoEm   DateTime @default(now()) @map("criado_em")
+  loja       Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("historico_loja")
+}
+
+model Plano {
+  id            String       @id @default(uuid())
+  nome          String       @unique
+  valor         Float
+  descricao     String?
+  status        String       @default("ativo")
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+  idPrecoStripe String?      @map("id_preco_stripe")
+  ativo         Boolean      @default(true)
+  periodo       String       @default("mensal")
+  recursos      Json?
+  assinaturas   Assinatura[]
+
+  @@map("plano")
+}
+
+model Assinatura {
+  id                  String               @id @default(uuid())
+  status              String               @default("ativo")
+  criadoEm            DateTime             @default(now()) @map("criado_em")
+  atualizadoEm        DateTime?            @updatedAt @map("atualizado_em")
+  dataAquisicao       DateTime             @map("data_aquisicao")
+  dataCancelamento    DateTime?            @map("data_cancelamento")
+  dataRenovacao       DateTime?            @map("data_renovacao")
+  dataFimCarencia     DateTime?            @map("data_fim_carencia")
+  formaPagamento      String               @map("forma_pagamento")
+  idLoja              String               @unique @map("id_loja")
+  duracaoPlano        Int                  @map("duracao_plano")
+  idPlano             String               @map("id_plano")
+  idAssinaturaStripe  String?              @unique @map("id_assinatura_stripe")
+  idClienteStripe     String?              @map("id_cliente_stripe")
+  loja                Loja                 @relation(fields: [idLoja], references: [id])
+  plano               Plano                @relation(fields: [idPlano], references: [id])
+  historicoPagementos HistoricoPagamento[]
+
+  @@map("assinatura")
+}
+
+model HistoricoPagamento {
+  id           String     @id @default(uuid())
+  idAssinatura String     @map("id_assinatura")
+  status       String
+  criadoEm     DateTime   @default(now()) @map("criado_em")
+  valor        Float
+  assinatura   Assinatura @relation(fields: [idAssinatura], references: [id], onDelete: Cascade)
+
+  @@map("historico_pagamento")
+}
+
+model Lojista {
+  id               String   @id @default(uuid())
+  idUsuario        String   @unique @map("id_usuario")
+  criadoEm         DateTime @default(now()) @map("criado_em")
+  atualizadoEm     DateTime @updatedAt @map("atualizado_em")
+  status           String   @default("ativo")
+  deviceToken      String?  @map("device_token")
+  tokenClienteMeta String?  @map("token_cliente_meta")
+  tokenClienteOlx  String?  @map("token_cliente_olx")
+  loja             Loja?
+  usuario          Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("lojista")
+}
+
+model EnderecoLoja {
+  id           String   @id @default(uuid())
+  idLoja       String   @map("id_loja")
+  cep          String?
+  uf           String
+  cidade       String
+  rua          String?
+  numero       String?
+  bairro       String?
+  complemento  String?
+  filial       Boolean
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  loja         Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("endereco_loja")
+}
+
+model ContatoLoja {
+  id           String   @id @default(uuid())
+  idLoja       String   @map("id_loja")
+  nome         String?
+  celular      String?
+  telefone     String?
+  email        String?
+  site         String?
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  loja         Loja     @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("contato_loja")
+}
+
+model Colaborador {
+  id                         String                        @id @default(uuid())
+  idLoja                     String                        @map("id_loja")
+  idUsuario                  String                        @unique @map("id_usuario")
+  urlFoto                    String?                       @map("url_foto")
+  nome                       String?
+  documentoFiscal            String?                       @unique @map("documento_fiscal")
+  status                     String                        @default("ativo")
+  observacoes                String?
+  criadoEm                   DateTime                      @default(now()) @map("criado_em")
+  atualizadoEm               DateTime                      @updatedAt @map("atualizado_em")
+  telefoneComplementar       String?                       @map("telefone_complementar")
+  whatsapp                   String?
+  atendimentoResponsaveis    AtendimentoResponsaveis[]
+  ChatResponsaveis           ChatResponsaveis[]
+  clienteColaborador         ClienteColaborador[]
+  loja                       Loja                          @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  usuario                    Usuario                       @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  atendimentosCompartilhados CompartilhamentoAtendimento[]
+  tarefasAtendimento         TarefasAtendimento[]
+  cargos                     Cargo[]                       @relation("cargo_colaborador")
+
+  @@unique([idLoja, documentoFiscal])
+  @@map("colaborador")
+}
+
+model Cliente {
+  id                       String                            @id @default(uuid())
+  idLoja                   String                            @map("id_loja")
+  nome                     String
+  tipoPessoa               String                            @map("tipo_pessoa")
+  documentoFiscal          String                            @map("documento_fiscal")
+  rg                       String?
+  estrangeiro              Boolean
+  genero                   String
+  dataNascimento           DateTime                          @map("data_nascimento")
+  observacoes              String?
+  telefone                 String
+  whatsapp                 String
+  email                    String
+  criadoEm                 DateTime                          @default(now()) @map("criado_em")
+  atualizadoEm             DateTime                          @updatedAt @map("atualizado_em")
+  status                   String                            @default("ativo")
+  versao                   Int
+  urlAvatar                String?                           @map("url_avatar")
+  anexo                    AnexoCliente[]
+  atendimento              Atendimento[]
+  chat                     Chat[]
+  loja                     Loja                              @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  clienteColaborador       ClienteColaborador[]
+  enderecoCliente          EnderecoCliente?
+  historicoDadosCadastrais HistoricoDadosCadastraisCliente[]
+
+  @@unique([documentoFiscal, idLoja])
+  @@unique([email, idLoja])
+  @@map("cliente")
+}
+
+model AnexoCliente {
+  id           String      @id @default(uuid())
+  idArquivo    String      @unique @map("id_arquivo")
+  idCliente    String      @map("id_cliente")
+  criadoEm     DateTime    @default(now()) @map("criado_em")
+  atualizadoEm DateTime?   @updatedAt @map("atualizado_em")
+  arquivo      ArquivoUUID @relation(fields: [idArquivo], references: [id], onDelete: Cascade)
+  cliente      Cliente     @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+
+  @@map("anexo_cliente")
+}
+
+model HistoricoDadosCadastraisCliente {
+  id              String   @id @default(uuid())
+  idCliente       String   @map("id_cliente")
+  versao          Int
+  atualizacao     String?
+  criadoEm        DateTime @default(now()) @map("criado_em")
+  idUsuarioEditor String?  @map("id_usuario_editor")
+  cliente         Cliente  @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+
+  @@map("historico_dados_cadastrais_cliente")
+}
+
+model ClienteColaborador {
+  id            String      @id @default(uuid())
+  idCliente     String      @map("id_cliente")
+  idColaborador String      @map("id_colaborador")
+  observacoes   String?
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+  cliente       Cliente     @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  colaborador   Colaborador @relation(fields: [idColaborador], references: [id], onDelete: Cascade)
+
+  @@map("cliente_colaborador")
+}
+
+model EnderecoCliente {
+  id           String   @id @default(uuid())
+  idCliente    String   @unique @map("id_cliente")
+  cep          String
+  uf           String
+  municipio    String
+  endereco     String
+  bairro       String
+  numero       String
+  complemento  String?
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  cliente      Cliente  @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+
+  @@map("endereco_cliente")
+}
+
+model Atendimento {
+  id                        String                        @id @default(uuid())
+  idCliente                 String?                       @map("id_cliente")
+  idClienteTemporario       String?                       @map("id_cliente_temporario")
+  origemAtendimento         String                        @map("origem_atendimento")
+  temperatura               String
+  status                    String
+  descricaoAtendimento      String?                       @map("descricao_atendimento")
+  observacao                String?
+  criadoEm                  DateTime                      @default(now()) @map("criado_em")
+  atualizadoEm              DateTime                      @updatedAt @map("atualizado_em")
+  idLoja                    String?                       @map("id_loja")
+  titulo                    String?
+  modoAtendimento           String?                       @map("modo_atendimento")
+  atendimentoManual         Boolean?                      @default(false) @map("atendimento_manual")
+  isArchived                Boolean                       @default(false) @map("is_archived")
+  anexos                    AnexoAtendimento[]
+  cliente                   Cliente?                      @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  clienteTemporario         ClienteTemporario?            @relation(fields: [idClienteTemporario], references: [id], onDelete: Cascade)
+  loja                      Loja?                         @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  atendimentoResponsaveis   AtendimentoResponsaveis[]
+  atendimentoTags           AtendimentoTag[]
+  chat                      Chat[]
+  comentariosAtendimento    ComentariosAtendimento[]
+  compartilhamentos         CompartilhamentoAtendimento[]
+  logsAtividadesAtendimento LogAtividadesAtendimento[]
+  SuspensaoAtendimento      SuspensaoAtendimento[]
+  tarefasAtendimento        TarefasAtendimento[]
+  visitasAtendimento        VisitasAtendimento[]
+
+  @@index([status])
+  @@index([atualizadoEm])
+  @@index([idLoja, criadoEm])
+  @@index([idLoja, status, criadoEm])
+  @@index([idLoja, modoAtendimento, criadoEm])
+  @@index([origemAtendimento])
+  @@index([temperatura])
+  @@map("atendimento")
+}
+
+model AnexoAtendimento {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  idArquivo     String      @unique @map("id_arquivo")
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime?   @updatedAt @map("atualizado_em")
+  nomeOriginal  String?     @map("nome_original")
+  arquivo       Arquivo     @relation(fields: [idArquivo], references: [id], onDelete: Cascade)
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+
+  @@map("anexo_atendimento")
+}
+
+model ClienteTemporario {
+  id                  String        @id @default(uuid())
+  nome                String?
+  email               String?
+  whatsapp            String?
+  criadoEm            DateTime      @default(now()) @map("criado_em")
+  atualizadoEm        DateTime      @updatedAt @map("atualizado_em")
+  idContatoApiExterna String        @map("id_contato_api_externa")
+  canal               String
+  avatar              String?       @map("avatar")
+  idLoja              String?       @map("id_loja")
+  atendimento         Atendimento[]
+  chat                Chat[]
+
+  @@map("cliente_temporario")
+}
+
+model CompartilhamentoAtendimento {
+  id               String      @id @default(uuid())
+  idAtendimento    String      @map("id_atendimento")
+  idColaborador    String      @map("id_colaborador")
+  idLoja           String      @map("id_loja")
+  compartilhadoPor String?     @map("compartilhado_por")
+  criadoEm         DateTime    @default(now()) @map("criado_em")
+  atualizadoEm     DateTime    @updatedAt @map("atualizado_em")
+  atendimento      Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  colaborador      Colaborador @relation(fields: [idColaborador], references: [id], onDelete: Cascade)
+  loja             Loja        @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("compartilhamento_atendimento")
+}
+
+model AtendimentoResponsaveis {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  idColaborador String      @map("id_colaborador")
+  idLoja        String?     @map("id_loja")
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  colaborador   Colaborador @relation(fields: [idColaborador], references: [id], onDelete: Cascade)
+  loja          Loja?       @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@index([idColaborador, idAtendimento])
+  @@map("atendimento_responsaveis")
+}
+
+model TarefasAtendimento {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  idResponsavel String      @map("id_responsavel")
+  nome          String
+  data          DateTime
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+  concluida     Boolean     @default(false)
+  horaFim       String?     @map("hora_fim")
+  horaInicio    String?     @map("hora_inicio")
+  observacoes   String?
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  colaborador   Colaborador @relation(fields: [idResponsavel], references: [id], onDelete: Cascade)
+
+  @@map("tarefas_atendimento")
+}
+
+model VisitasAtendimento {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  observacoes   String?
+  tipo          String
+  data          DateTime
+  horaInicio    String      @map("hora_inicio")
+  horaFim       String?     @map("hora_fim")
+  concluida     Boolean     @default(false)
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+
+  @@index([idAtendimento, concluida])
+  @@map("visitas_atendimento")
+}
+
+model ComentariosAtendimento {
+  id               String      @id @default(uuid())
+  idAtendimento    String      @map("id_atendimento")
+  comentario       String
+  criadoEm         DateTime    @default(now()) @map("criado_em")
+  atualizadoEm     DateTime    @updatedAt @map("atualizado_em")
+  idUsuario        String      @map("id_usuario")
+  motivoPerdido    String?     @map("motivo_perdido")
+  subMotivoPerdido String?     @map("sub_motivo_perdido")
+  atendimento      Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  usuario          Usuario     @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@index([idAtendimento, motivoPerdido])
+  @@map("comentarios_atendimento")
+}
+
+model SuspensaoAtendimento {
+  id            String       @id @default(uuid())
+  idUsuario     String       @map("id_usuario")
+  descricao     String?
+  startDate     DateTime     @map("start_date")
+  endDate       DateTime     @map("end_date")
+  criadoEm      DateTime     @default(now()) @map("criado_em")
+  atualizadoEm  DateTime     @updatedAt @map("atualizado_em")
+  atendimentoId String?
+  Atendimento   Atendimento? @relation(fields: [atendimentoId], references: [id])
+  usuario       Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("suspensao_atendimento")
+}
+
+model LogAtividadesAtendimento {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  mensagem      String
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  dadosAntigos  Json?       @map("dados_antigos")
+  dadosNovos    Json?       @map("dados_novos")
+  idUsuario     String?     @map("id_usuario")
+  tipoEvento    String      @map("tipo_evento")
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  usuario       Usuario?    @relation(fields: [idUsuario], references: [id])
+
+  @@index([idAtendimento, tipoEvento])
+  @@index([idAtendimento, criadoEm])
+  @@map("log_atividades_atendimento")
+}
+
+model Arquivo {
+  id               String            @id @default(uuid())
+  usuarioId        String            @map("usuario_id")
+  entidadeId       String            @map("entidade_id")
+  entidade         String            @map("entidade") @db.VarChar(100)
+  nome             String
+  tipo             String
+  url              String
+  validade         DateTime          @map("validade")
+  criadoEm         DateTime          @default(now()) @map("criado_em")
+  editadoEm        DateTime?         @updatedAt @map("editado_em")
+  versao           Int               @default(0)
+  tamanho          Int               @default(0)
+  anexoAtendimento AnexoAtendimento?
+  anexoChat        AnexoChat?
+  anexoSuporte     AnexoSuporte?
+  imagemPublica    ImagemPublica?
+
+  @@map("arquivos")
+}
+
+model ArquivoUUID {
+  id           String        @id @default(uuid())
+  nome         String
+  tipo         String
+  url          String
+  validade     DateTime      @map("validade")
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  editadoEm    DateTime?     @updatedAt @map("editado_em")
+  versao       Int           @default(0)
+  anexoCliente AnexoCliente?
+
+  @@map("arquivos_uuid")
+}
+
+model Permissao {
+  id             String   @id @default(uuid())
+  idUsuario      String   @map("usuario_id")
+  status         String   @default("ativo")
+  criadoEm       DateTime @default(now()) @map("criado_em")
+  atualizadoEm   DateTime @updatedAt @map("atualizado_em")
+  funcionalidade String
+  usuario        Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("permissoes")
+}
+
+model Notificacao {
+  id           String   @id @default(uuid())
+  idUsuario    String   @map("id_usuario")
+  tipo         String
+  mensagem     String
+  status       String
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  idReferencia String?  @map("id_referencia")
+  usuario      Usuario  @relation(fields: [idUsuario], references: [id])
+
+  @@map("notificacao")
+}
+
+model Chat {
+  id                       String             @id @default(uuid())
+  idLoja                   String             @map("id_loja")
+  idCliente                String?            @map("id_cliente")
+  idClienteTemporario      String?            @map("id_cliente_temporario")
+  idAtendimento            String?
+  idDestinatarioApiExterna String             @map("id_destinario_api_externa")
+  canal                    String
+  criadoEm                 DateTime           @default(now()) @map("criado_em")
+  atualizadoEm             DateTime           @updatedAt @map("atualizado_em")
+  idAnuncioExterno         String?            @map("id_anuncio_externo")
+  arquivado                Boolean            @default(false)
+  ultimaMensagemClienteEm  DateTime?          @map("ultima_mensagem_cliente_em")
+  anexoChat                AnexoChat[]
+  atendimento              Atendimento?       @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  cliente                  Cliente?           @relation(fields: [idCliente], references: [id], onDelete: Cascade)
+  clienteTemporario        ClienteTemporario? @relation(fields: [idClienteTemporario], references: [id], onDelete: Cascade)
+  loja                     Loja               @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  chatResponsaveis         ChatResponsaveis[]
+  mensagem                 Mensagem[]
+
+  @@unique([idCliente, idLoja, canal])
+  @@unique([idClienteTemporario, idLoja, canal])
+  @@index([idLoja, canal, idDestinatarioApiExterna])
+  @@index([idLoja, canal, idDestinatarioApiExterna, idAtendimento])
+  @@index([criadoEm])
+  @@map("chat")
+}
+
+model ChatResponsaveis {
+  id            String      @id @default(uuid())
+  idChat        String      @map("id_chat")
+  idColaborador String      @map("id_colaborador")
+  idLoja        String?     @map("id_loja")
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
+  chat          Chat        @relation(fields: [idChat], references: [id], onDelete: Cascade)
+  colaborador   Colaborador @relation(fields: [idColaborador], references: [id], onDelete: Cascade)
+  loja          Loja?       @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@unique([idChat, idColaborador])
+  @@map("chat_responsaveis")
+}
+
+model AnexoChat {
+  id           String    @id @default(uuid())
+  idChat       String    @map("id_chat")
+  idArquivo    String    @unique @map("id_arquivo")
+  tipoAnexo    String    @map("tipo_anexo")
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  atualizadoEm DateTime? @updatedAt @map("atualizado_em")
+  arquivo      Arquivo   @relation(fields: [idArquivo], references: [id], onDelete: Cascade)
+  chat         Chat      @relation(fields: [idChat], references: [id], onDelete: Cascade)
+
+  @@map("anexo_chat")
+}
+
+model Mensagem {
+  id                       String          @id @default(uuid())
+  idUsuario                String?
+  idChat                   String          @map("id_chat")
+  idDestinatarioApiExterna String?         @map("id_destinario_api_externa")
+  idMensagemExterna        String?         @map("id_mensagem_externa")
+  idMensagemReferenciaExt  String?         @map("id_msg_ref_ext")
+  anexoMensagem            String?         @map("anexo_mensagem")
+  tipoAnexo                String?         @map("tipo_anexo")
+  tipo                     String?
+  reaction                 String?
+  conteudo                 String?
+  canal                    String
+  criadoEm                 DateTime        @default(now()) @map("criado_em")
+  remetente                String
+  lido                     Boolean         @default(true)
+  origemInstagram          String?
+  metadados                Json?
+  usuario                  Usuario?        @relation(fields: [idUsuario], references: [id])
+  chat                     Chat            @relation(fields: [idChat], references: [id])
+  pessoa                   MensagemPessoa?
+
+  @@map("mensagem")
+}
+
+model MensagemPadrao {
+  id           String   @id @default(uuid())
+  idLoja       String   @map("id_loja")
+  titulo       String   @db.VarChar(100)
+  conteudo     String   @db.VarChar(1000)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  loja Loja @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@map("mensagem_padrao")
+}
+
+model MensagemPessoa {
+  id         String   @id @default(uuid())
+  idMensagem String   @unique @map("id_mensagem")
+  nome       String?
+  avatar     String?
+  messagem   Mensagem @relation(fields: [idMensagem], references: [id], onDelete: Cascade)
+
+  @@map("mensagem_pessoa")
+}
+
+model Faq {
+  id           String    @id @default(uuid())
+  titulo       String
+  slug         String    @unique
+  categoria    String
+  conteudo     String
+  status       String    @default("rascunho")
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em")
+  resumo       String?
+  views        Int       @default(0)
+  tags         TagsFaq[] @relation("faq_tags")
+
+  @@map("faq")
+}
+
+model TagsFaq {
+  id           String   @id @default(uuid())
+  nome         String   @unique
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  faqs         Faq[]    @relation("faq_tags")
+
+  @@map("tags_faq")
+}
+
+model TicketSuporte {
+  id           String            @id @default(uuid())
+  idUsuario    String            @map("id_usuario")
+  idLoja       String?           @map("id_loja")
+  titulo       String
+  assunto      String
+  mensagem     String
+  prioridade   String            @default("normal")
+  status       String            @default("aberto")
+  tipo         String?
+  categoria    String?
+  criadoEm     DateTime          @default(now()) @map("criado_em")
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em")
+  arquivos     AnexoSuporte[]
+  respostas    RespostaTicket[]
+  historico    TicketHistorico[]
+  loja         Loja?             @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+  usuario      Usuario           @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("ticket_suporte")
+}
+
+model TicketHistorico {
+  id        String        @id @default(uuid())
+  evento    String
+  acao      String
+  idTicket  String        @map("id_ticket")
+  idUsuario String        @map("id_usuario")
+  criadoEm  DateTime      @default(now()) @map("criado_em")
+  ticket    TicketSuporte @relation(fields: [idTicket], references: [id], onDelete: Cascade)
+  usuario   Usuario       @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("ticket_historico")
+}
+
+model RespostaTicket {
+  id           String         @id @default(uuid())
+  idTicket     String         @map("id_ticket")
+  idUsuario    String         @map("id_usuario")
+  resposta     String
+  criadoEm     DateTime       @default(now()) @map("criado_em")
+  atualizadoEm DateTime       @updatedAt @map("atualizado_em")
+  arquivos     AnexoSuporte[]
+  ticket       TicketSuporte  @relation(fields: [idTicket], references: [id], onDelete: Cascade)
+  usuario      Usuario        @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@map("resposta_ticket")
+}
+
+model AnexoSuporte {
+  id           String          @id @default(uuid())
+  idResposta   String?         @map("id_resposta")
+  idArquivo    String?         @unique @map("id_arquivo")
+  criadoEm     DateTime        @default(now()) @map("criado_em")
+  atualizadoEm DateTime?       @updatedAt @map("atualizado_em")
+  idTicket     String          @map("id_ticket")
+  nomeOriginal String?         @map("nome_original")
+  arquivo      Arquivo?        @relation(fields: [idArquivo], references: [id], onDelete: Cascade)
+  resposta     RespostaTicket? @relation(fields: [idResposta], references: [id], onDelete: Cascade)
+  ticket       TicketSuporte   @relation(fields: [idTicket], references: [id], onDelete: Cascade)
+
+  @@map("anexo_suporte")
+}
+
+model ImagemPublica {
+  id           String    @id @default(uuid())
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  atualizadoEm DateTime? @updatedAt @map("atualizado_em")
+  idArquivo    String?   @unique @map("id_arquivo")
+  arquivo      Arquivo?  @relation(fields: [idArquivo], references: [id], onDelete: Cascade)
+
+  @@map("imagem_publica")
+}
+
+model Tag {
+  id              String           @id @default(uuid())
+  nome            String
+  criadoEm        DateTime         @default(now()) @map("criado_em")
+  atualizadoEm    DateTime         @updatedAt @map("atualizado_em")
+  cor             String?
+  descricao       String?
+  idLoja          String           @map("id_loja")
+  atendimentoTags AtendimentoTag[]
+  loja            Loja             @relation(fields: [idLoja], references: [id], onDelete: Cascade)
+
+  @@unique([nome, idLoja])
+  @@map("tags")
+}
+
+model AtendimentoTag {
+  id            String      @id @default(uuid())
+  idAtendimento String      @map("id_atendimento")
+  idTag         String      @map("id_tag")
+  criadoEm      DateTime    @default(now()) @map("criado_em")
+  atendimento   Atendimento @relation(fields: [idAtendimento], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [idTag], references: [id], onDelete: Cascade)
+
+  @@unique([idAtendimento, idTag])
+  @@map("atendimento_tag")
+}
