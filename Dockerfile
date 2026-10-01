@@ -1,21 +1,9 @@
 FROM node:20-alpine
-
 RUN apk add --no-cache openssl
-
 WORKDIR /app
-
 COPY package*.json ./
-
-RUN npm pkg delete scripts.postinstall
-
-RUN npm install
-
+RUN npm ci --ignore-scripts
 COPY . .
-
-RUN npx prisma generate
-
-RUN npm run build
-
+RUN npx prisma generate && npm run build
 EXPOSE 3003
-
 CMD ["npm", "run", "start:prod"]

@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/persistence/database/prisma/prisma.service';
-import { CriarUsuarioAdminDto } from './dto/criar-usuario-admin.dto';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { uuidv7 } from 'uuidv7';
 import * as bcrypt from 'bcrypt';
-import { USUARIO_PERFIL } from 'src/core/usuario/enum/perfil.enum';
+import { USER_PROFILE } from 'src/core/user/enum/profile.enum';
 import { MailService } from 'src/utils/mail/mail.service';
 import {
   AppErrorConflict,
   AppErrorForbidden,
   AppErrorNotFound,
 } from 'src/utils/errors/app-errors';
-import { PermissoesAdminDto } from './dto/permissoes-admin.dto';
-import { EditarUsuarioAdminDto } from './dto/editar-usuario-admin.dto';
-import { EditarAdminLogadoDto } from './dto/editar-admin-logado.dto';
-import { ListarUsuariosAdminDto } from './dto/listar-usuarios-admin.dto';
+import { PermissionsAdminDto } from './dto/permissions-admin.dto';
+import { EditUserAdminDto } from './dto/edit-user-admin.dto';
+import { EditAdminLoggedInDto } from './dto/edit-admin-loggedIn.dto';
+import { ListUsersAdminDto } from './dto/list-users-admin.dto';
 import { Prisma } from '@prisma/client';
-import { PERMISSOES_AUTOPILOT } from 'src/core/usuario/enum/permissoes_funcionalidades.enum';
+import { PERMISSIONS_AUTOPILOT } from 'src/core/user/enum/permissions_features.enum';
 import { getStringUrlAvatar } from 'src/utils/avatarUtils';
 
 @Injectable()
@@ -25,94 +25,94 @@ export class AdminService {
     private readonly mailService: MailService,
   ) {}
 
-  private readonly usuarioSelect: Prisma.UsuarioSelect = {
+  private readonly userSelect: Prisma.UserSelect = {
     id: true,
     email: true,
-    nome: true,
+    name: true,
     status: true,
-    perfil: true,
-    criadoEm:true,
-    permissao: {
+    profile: true,
+    createdAt: true,
+    permission: {
       select: {
-        funcionalidade: true,
+        feature: true,
       },
     },
   };
 
-  private async checarEmailUnico(email: string, idUsuario?: string) {
-    const emailExiste = await this.prismaService.usuario.findUnique({
+  private async checkEmailUnique(email: string, userId?: string) {
+    const emailExists = await this.prismaService.user.findUnique({
       where: {
         email,
       },
     });
 
-    if (idUsuario && emailExiste && emailExiste.id === idUsuario) {
+    if (userId && emailExists && emailExists.id === userId) {
       return;
     }
 
-    if (emailExiste) {
-      throw new AppErrorConflict('E-mail já cadastrado.');
+    if (emailExists) {
+      throw new AppErrorConflict('Email already registered.');
     }
   }
 
-  async listarPermissoesValidas() {
-    return Object.values(PERMISSOES_AUTOPILOT);
+  async listPermissionsValid() {
+    return Object.values(PERMISSIONS_AUTOPILOT);
   }
 
-  async buscarAdminPorId(idUsuario: string) {
-    const usuario = await this.prismaService.usuario.findUnique({
+  async findAdminById(userId: string) {
+    const user = await this.prismaService.user.findUnique({
       where: {
-        id: idUsuario,
-        perfil: USUARIO_PERFIL.AUTOPILOT,
+        id: userId,
+        profile: USER_PROFILE.AUTOPILOT,
         status: {
-          not: 'excluido',
+          not: 'deleted',
         },
       },
-      select: this.usuarioSelect,
+      select: this.userSelect,
     });
 
-    if (!usuario) {
-      throw new AppErrorNotFound('Usuário admin não encontrado.');
+    if (!user) {
+      throw new AppErrorNotFound('User admin not found.');
     }
 
-    const permissoes =
-      usuario.permissao?.map((permissao) => permissao.funcionalidade) ?? [];
+    const permissions =
+      user.permission?.map((permission) => permission.feature) ?? [];
 
     return {
-      ...usuario,
-      avatarUrl: getStringUrlAvatar(usuario.id),
-      permissao: undefined,
-      permissoes,
+      ...user,
+      avatarUrl: getStringUrlAvatar(user.id),
+      permission: undefined,
+      permissions,
     };
   }
 
-  async listarUsuariosAdmin(params: ListarUsuariosAdminDto) {
-    const pagina = params.pagina ? +params.pagina : 1;
-    const itensPorPagina = params.itensPorPagina ? +params.itensPorPagina : 6;
-    const pesquisa = params.pesquisa || '';
+  async listUsersAdmin(params: ListUsersAdminDto) {
+    const page = params.page ? +params.page : 1;
+    const itemsByPage = params.itemsByPage ? +params.itemsByPage : 6;
+    const search = params.search || '';
     let status = params.status ?? undefined;
 
-    if (status === 'todos') {
+    if (status === 'all') {
       status = undefined;
     }
 
-    const dataInicial = params.dataInicial
-      ? new Date(params.dataInicial)
+    const dataInitial = params.dataInitial
+      ? new Date(params.dataInitial)
       : undefined;
 
     const dataFinal = params.dataFinal ? new Date(params.dataFinal) : undefined;
 
-    const where: Prisma.UsuarioWhereInput = {
+    const where: Prisma.UserWhereInput = {
       AND: [
         {
-          perfil: USUARIO_PERFIL.AUTOPILOT,
+          profile: USER_PROFILE.AUTOPILOT,
           status: {
             equals: status,
-            not: 'excluido',
+            not: 'deleted',
           },
 
-          criadoEm: {
-            gte: dataInicial,
+          createdAt: {
+            gte: dataInitial,
             lte: dataFinal,
           },
         },
@@ -120,13 +120,13 @@ export class AdminService {
           OR: [
             {
               email: {
-                contains: pesquisa,
+                contains: search,
                 mode: 'insensitive',
               },
             },
             {
-              nome: {
-                contains: pesquisa,
+              name: {
+                contains: search,
                 mode: 'insensitive',
               },
             },
@@ -135,93 +135,93 @@ export class AdminService {
       ],
     };
 
-    const usuarios = await this.prismaService.usuario.findMany({
+    const users = await this.prismaService.user.findMany({
       where,
-      skip: (pagina - 1) * itensPorPagina,
-      take: itensPorPagina,
-      select: this.usuarioSelect,
+      skip: (page - 1) * itemsByPage,
+      take: itemsByPage,
+      select: this.userSelect,
     });
 
-    const totalUsuarios = await this.prismaService.usuario.count({
+    const totalUsers = await this.prismaService.user.count({
       where,
     });
 
-    const usuariosFormatados = usuarios.map((usuario) => {
-      const permissoes =
-        usuario.permissao?.map((permissao) => permissao.funcionalidade) ?? [];
+    const usersFormatted = users.map((user) => {
+      const permissions =
+        user.permission?.map((permission) => permission.feature) ?? [];
 
       return {
-        ...usuario,
-        avatarUrl: getStringUrlAvatar(usuario.id),
-        permissao: undefined,
-        permissoes,
+        ...user,
+        avatarUrl: getStringUrlAvatar(user.id),
+        permission: undefined,
+        permissions,
       };
     });
 
     return {
-      pagina,
-      itensPorPagina,
-      totalPaginas: Math.ceil(totalUsuarios / itensPorPagina),
-      totalUsuarios,
-      pesquisa,
+      page,
+      itemsByPage,
+      totalPages: Math.ceil(totalUsers / itemsByPage),
+      totalUsers,
+      search,
       status: params.status,
-      dataInicial,
+      dataInitial,
       dataFinal,
-      usuarios: usuariosFormatados,
+      users: usersFormatted,
     };
   }
 
-  async criarUsuarioAdmin(params: CriarUsuarioAdminDto) {
-    const hash = await bcrypt.hash(params.senha, 10);
+  async createUserAdmin(params: CreateUserAdminDto) {
+    const hash = await bcrypt.hash(params.password, 10);
 
-    await this.checarEmailUnico(params.email);
+    await this.checkEmailUnique(params.email);
 
-    const usuario = await this.prismaService.usuario.create({
+    const user = await this.prismaService.user.create({
       data: {
         email: params.email,
-        senha: hash,
-        nome: params.nome,
-        perfil: USUARIO_PERFIL.AUTOPILOT,
+        password: hash,
+        name: params.name,
+        profile: USER_PROFILE.AUTOPILOT,
       },
       select: {
         id: true,
         email: true,
-        nome: true,
-        perfil: true,
+        name: true,
+        profile: true,
       },
     });
 
-    const permissoesUnicas = Array.from(new Set(params.permissoes));
+    const permissionsUnique = Array.from(new Set(params.permissions));
 
-    await this.prismaService.permissao.createMany({
-      data: permissoesUnicas.map((permissao) => ({
-        idUsuario: usuario.id,
-        funcionalidade: permissao,
+    await this.prismaService.permission.createMany({
+      data: permissionsUnique.map((permission) => ({
+        userId: user.id,
+        feature: permission,
       })),
     });
 
-    await this.mailService.enviarDadosDeAcesso({
+    await this.mailService.sendDataOfAccess({
       email: params.email,
-      senha: params.senha,
-      nome: params.nome,
-      observacoes: params.observacoes,
+      password: params.password,
+      name: params.name,
+      notes: params.notes,
     });
 
-    const usuarioAtualizado = await this.buscarAdminPorId(usuario.id);
+    const userUpdated = await this.findAdminById(user.id);
 
-    return usuarioAtualizado;
+    return userUpdated;
   }
 
-  async editarUsuarioAdmin(idUsuario: string, params: EditarUsuarioAdminDto) {
+  async editUserAdmin(userId: string, params: EditUserAdminDto) {
     if (params.email) {
-      await this.checarEmailUnico(params.email, idUsuario);
+      await this.checkEmailUnique(params.email, userId);
     }
 
-    const usuario = await this.buscarAdminPorId(idUsuario);
+    const user = await this.findAdminById(userId);
 
-    await this.prismaService.usuario.update({
+    await this.prismaService.user.update({
       where: {
-        id: idUsuario,
+        id: userId,
       },
       data: {
         ...params,
@@ -229,144 +229,144 @@ export class AdminService {
     });
 
     return {
-      ...usuario,
+      ...user,
       ...params,
     };
   }
 
-  async editarAdminLogado(idUsuario: string, params: EditarAdminLogadoDto) {
+  async editAdminLoggedIn(userId: string, params: EditAdminLoggedInDto) {
     if (params.email) {
-      await this.checarEmailUnico(params.email, idUsuario);
+      await this.checkEmailUnique(params.email, userId);
     }
 
-    const paramsParaAtualizar = { ...params };
+    const paramsForUpdate = { ...params };
 
-    if (params.senha) {
-      paramsParaAtualizar.senha = await bcrypt.hash(params.senha, 10);
+    if (params.password) {
+      paramsForUpdate.password = await bcrypt.hash(params.password, 10);
     }
 
-    await this.prismaService.usuario.update({
+    await this.prismaService.user.update({
       where: {
-        id: idUsuario,
+        id: userId,
       },
       data: {
-        ...paramsParaAtualizar,
+        ...paramsForUpdate,
       },
     });
 
-    const usuarioEditado = await this.buscarAdminPorId(idUsuario);
+    const userEdited = await this.findAdminById(userId);
 
-    return usuarioEditado;
+    return userEdited;
   }
 
-  async deletarUsuarioAdmin(idUsuarioLogado: string, idUsuario: string) {
-    if (idUsuarioLogado === idUsuario) {
-      throw new AppErrorForbidden('Você não pode deletar sua própria conta.');
+  async deleteUserAdmin(idUserLoggedIn: string, userId: string) {
+    if (idUserLoggedIn === userId) {
+      throw new AppErrorForbidden('You cannot can delete your own account.');
     }
 
-    const usuario = await this.buscarAdminPorId(idUsuario);
+    const user = await this.findAdminById(userId);
 
     const uniqueId = uuidv7();
 
-    const emailUnico = `${usuario.email}+${uniqueId}`;
+    const emailUnique = `${user.email}+${uniqueId}`;
 
-    const usuarioExcluido = await this.prismaService.$transaction(
+    const userDeleted = await this.prismaService.$transaction(
       async (prisma) => {
-        await prisma.permissao.deleteMany({
+        await prisma.permission.deleteMany({
           where: {
-            idUsuario,
+            userId,
           },
         });
 
-        return await prisma.usuario.update({
+        return await prisma.user.update({
           where: {
-            id: idUsuario,
+            id: userId,
           },
           data: {
-            status: 'excluido',
-            email: emailUnico,
+            status: 'deleted',
+            email: emailUnique,
           },
-          select: this.usuarioSelect,
+          select: this.userSelect,
         });
       },
     );
 
-    return usuarioExcluido;
+    return userDeleted;
   }
 
-  async concederPermissoes(
-    idUsuarioLogado: string,
-    idUsuario: string,
-    params: PermissoesAdminDto,
+  async grantPermissions(
+    idUserLoggedIn: string,
+    userId: string,
+    params: PermissionsAdminDto,
   ) {
-    if (idUsuarioLogado === idUsuario) {
+    if (idUserLoggedIn === userId) {
       throw new AppErrorForbidden(
-        'Você não pode alterar suas próprias permissões.',
+        'You cannot can update your own permissions.',
       );
     }
 
-    const usuario = await this.buscarAdminPorId(idUsuario);
+    const user = await this.findAdminById(userId);
 
-    const novasPermissoes = params.permissoes.filter(
-      (permissao) => !usuario.permissoes?.includes(permissao),
+    const newPermissions = params.permissions.filter(
+      (permission) => !user.permissions?.includes(permission),
     );
 
-    if (novasPermissoes.length === 0) {
+    if (newPermissions.length === 0) {
       return {
-        ...usuario,
-        permissoes: usuario.permissoes ?? [],
-        permissao: undefined,
+        ...user,
+        permissions: user.permissions ?? [],
+        permission: undefined,
       };
     }
 
-    await this.prismaService.permissao.createMany({
-      data: novasPermissoes.map((permissao) => ({
-        idUsuario: usuario.id,
-        funcionalidade: permissao,
+    await this.prismaService.permission.createMany({
+      data: newPermissions.map((permission) => ({
+        userId: user.id,
+        feature: permission,
       })),
     });
 
-    const usuarioAtualizado = await this.buscarAdminPorId(idUsuario);
+    const userUpdated = await this.findAdminById(userId);
 
-    return usuarioAtualizado;
+    return userUpdated;
   }
 
-  async removerPermissoes(
-    idUsuarioLogado: string,
-    idUsuario: string,
-    params: PermissoesAdminDto,
+  async removePermissions(
+    idUserLoggedIn: string,
+    userId: string,
+    params: PermissionsAdminDto,
   ) {
-    if (idUsuarioLogado === idUsuario) {
+    if (idUserLoggedIn === userId) {
       throw new AppErrorForbidden(
-        'Você não pode alterar suas próprias permissões.',
+        'You cannot can update your own permissions.',
       );
     }
 
-    const usuario = await this.buscarAdminPorId(idUsuario);
+    const user = await this.findAdminById(userId);
 
-    const permissoesParaRemover = params.permissoes.filter((permissao) =>
-      usuario.permissoes?.includes(permissao),
+    const permissionsForRemove = params.permissions.filter((permission) =>
+      user.permissions?.includes(permission),
     );
 
-    if (permissoesParaRemover.length === 0) {
+    if (permissionsForRemove.length === 0) {
       return {
-        ...usuario,
-        permissoes: usuario.permissoes ?? [],
-        permissao: undefined,
+        ...user,
+        permissions: user.permissions ?? [],
+        permission: undefined,
       };
     }
 
-    await this.prismaService.permissao.deleteMany({
+    await this.prismaService.permission.deleteMany({
       where: {
-        idUsuario,
-        funcionalidade: {
-          in: permissoesParaRemover,
+        userId,
+        feature: {
+          in: permissionsForRemove,
         },
       },
     });
 
-    const usuarioAtualizado = await this.buscarAdminPorId(idUsuario);
+    const userUpdated = await this.findAdminById(userId);
 
-    return usuarioAtualizado;
+    return userUpdated;
   }
 }

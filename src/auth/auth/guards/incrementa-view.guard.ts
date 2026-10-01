@@ -4,7 +4,7 @@ import { AppErrorUnauthorized } from 'src/utils/errors/app-errors';
 
 @Injectable()
 export class ViewApiKeyGuard implements CanActivate {
-  private readonly apiKeyValida = process.env.VIEW_API_KEY;
+  private readonly apiKeyValid = process.env.VIEW_API_KEY;
 
   canActivate(
     context: ExecutionContext,
@@ -13,8 +13,8 @@ export class ViewApiKeyGuard implements CanActivate {
 
     const apiKey = request.headers['x-api-guard'];
 
-    if (!apiKey || apiKey !== this.apiKeyValida) {
-      throw new AppErrorUnauthorized('API Key inválida');
+    if (!apiKey || apiKey !== this.apiKeyValid) {
+      throw new AppErrorUnauthorized('API Key invalid');
     }
 
     return true;

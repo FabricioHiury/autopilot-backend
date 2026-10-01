@@ -30,11 +30,7 @@ function getConfigFromEnv(): FirebaseConfig | null {
     FIREBASE_UNIVERSE_DOMAIN,
   } = process.env;
 
-  if (
-    FIREBASE_PROJECT_ID &&
-    FIREBASE_PRIVATE_KEY &&
-    FIREBASE_CLIENT_EMAIL
-  ) {
+  if (FIREBASE_PROJECT_ID && FIREBASE_PRIVATE_KEY && FIREBASE_CLIENT_EMAIL) {
     const privateKey = FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
     return {
       type: FIREBASE_TYPE || 'service_account',
@@ -43,7 +39,8 @@ function getConfigFromEnv(): FirebaseConfig | null {
       private_key: privateKey,
       client_email: FIREBASE_CLIENT_EMAIL,
       client_id: FIREBASE_CLIENT_ID || '',
-      auth_uri: FIREBASE_AUTH_URI || 'https://accounts.google.com/o/oauth2/auth',
+      auth_uri:
+        FIREBASE_AUTH_URI || 'https://accounts.google.com/o/oauth2/auth',
       token_uri: FIREBASE_TOKEN_URI || 'https://oauth2.googleapis.com/token',
       auth_provider_x509_cert_url:
         FIREBASE_AUTH_PROVIDER_X509_CERT_URL ||
@@ -81,7 +78,7 @@ export function getFirebaseConfig(): FirebaseConfig {
   if (fromFile) return fromFile;
 
   console.error(
-    'Erro ao carregar configuração do Firebase: nem variáveis de ambiente (FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL) nem o arquivo src/config/firebase.json foram encontrados.',
+    'Failed to load configuration of Firebase: neither variables of environment (FIREBASE_PROJECT_ID, FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL) neither o file src/config/firebase.json were found.',
   );
-  throw new Error('Não foi possível carregar a configuração do Firebase');
+  throw new Error('Unable to load a configuration of Firebase');
 }

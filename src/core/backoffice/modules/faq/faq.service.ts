@@ -6,11 +6,11 @@ import {
   AppErrorBadRequest,
   AppErrorNotFound,
 } from 'src/utils/errors/app-errors';
-import { AtualizarFaqDto } from './dto/atualizar-faq.dto';
-import { CriarFaqDto } from './dto/criar-faq.dto';
-import { ListarFaqDto } from './dto/listar-faq.dto';
+import { UpdateFaqDto } from './dto/update-faq.dto';
+import { CreateFaqDto } from './dto/create-faq.dto';
+import { ListFaqDto } from './dto/list-faq.dto';
 import { FileService } from 'src/persistence/files/file/file.service';
-import { gerarStringUrlImagemPublica } from 'src/utils/imagemPublicaUtils';
+import { generateStringUrlImagePublic } from 'src/utils/imagePublicUtils';
 
 @Injectable()
 export class FaqService {
@@ -21,35 +21,35 @@ export class FaqService {
 
   private FaqSelectList: Prisma.FaqSelect = {
     id: true,
-    titulo: true,
-    categoria: true,
+    title: true,
+    category: true,
     status: true,
-    resumo: true,
+    summary: true,
     views: true,
-    criadoEm: true,
-    atualizadoEm: true,
+    createdAt: true,
+    updatedAt: true,
     tags: {
       select: {
-        nome: true,
+        name: true,
       },
     },
   };
 
-  private async formataTags(faqs) {
+  private async formatTags(faqs) {
     if (IsArray(faqs) && faqs.length > 0) {
       return faqs.map((faq) => ({
         ...faq,
-        tags: faq.tags?.map((tag) => tag.nome.toLowerCase()) || [],
+        tags: faq.tags?.map((tag) => tag.name.toLowerCase()) || [],
       }));
     }
-    
+
     return {
       ...faqs,
-      tags: faqs.tags?.map((tag) => tag.nome.toLowerCase()) || [],
+      tags: faqs.tags?.map((tag) => tag.name.toLowerCase()) || [],
     };
   }
 
-  private async normalizaSlug(slug: string) {
+  private async normalizeSlug(slug: string) {
     slug = slug
       .toLowerCase()
       .normalize('NFD')
@@ -67,103 +67,101 @@ export class FaqService {
     //como-resolver-o-erro-do-meu-carro-2
     //como-resolver-o-erro-do-meu-carro-3
 
-    const slugsExistentes = await this.prismaService.faq.findMany({
+    const slugsExisting = await this.prismaService.faq.findMany({
       where: { slug: { startsWith: slug } },
       select: { slug: true },
     });
 
-    if (slugsExistentes.length === 0) {
+    if (slugsExisting.length === 0) {
       return slug;
     }
 
-    let maiorNumero = 0;
-    for (const item of slugsExistentes) {
-      const partes = item.slug.split('-');
-      const numero = parseInt(partes[partes.length - 1], 10);
-      if (!isNaN(numero)) {
-        maiorNumero = Math.max(maiorNumero, numero);
+    let greaterNumber = 0;
+    for (const item of slugsExisting) {
+      const parts = item.slug.split('-');
+      const number = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(number)) {
+        greaterNumber = Math.max(greaterNumber, number);
       }
     }
 
-    return `${slug}-${maiorNumero + 1}`;
+    return `${slug}-${greaterNumber + 1}`;
   }
 
-  private async editarTags(idFaq: string, tags: string[], prisma) {
+  private async editTags(idFaq: string, tags: string[], prisma) {
     const faq = await prisma.faq.findUnique({
       where: { id: idFaq },
       select: {
         id: true,
         tags: {
           select: {
-            nome: true,
+            name: true,
           },
         },
       },
     });
 
     if (!faq) {
-      throw new AppErrorNotFound('Faq não encontrado');
+      throw new AppErrorNotFound('Faq not found');
     }
 
     if (!tags) {
       return faq;
     }
 
-    let tagsExistentes = faq.tags.map((tag) => tag.nome.toLowerCase());
+    let tagsExisting = faq.tags.map((tag) => tag.name.toLowerCase());
 
-    if (!tagsExistentes) {
+    if (!tagsExisting) {
       return await prisma.faq.update({
         where: { id: idFaq },
         include: {
           tags: {
             select: {
-              nome: true,
+              name: true,
             },
           },
         },
         data: {
           tags: {
-            connectOrCreate: tags.map((nomeTag) => ({
-              where: { nome: nomeTag.toLowerCase() },
-              create: { nome: nomeTag.toLowerCase() },
+            connectOrCreate: tags.map((nameTag) => ({
+              where: { name: nameTag.toLowerCase() },
+              create: { name: nameTag.toLowerCase() },
             })),
           },
         },
       });
     }
 
-    const tagsParaRemover = tagsExistentes.filter((tag) => !tags.includes(tag));
+    const tagsForRemove = tagsExisting.filter((tag) => !tags.includes(tag));
 
-    const tagsParaAdicionar = tags.filter(
-      (tag) => !tagsExistentes.includes(tag),
-    );
+    const tagsForAdd = tags.filter((tag) => !tagsExisting.includes(tag));
 
-    if (tagsParaRemover.length > 0) {
+    if (tagsForRemove.length > 0) {
       await prisma.faq.update({
         where: { id: idFaq },
         data: {
           tags: {
-            disconnect: tagsParaRemover.map((tag) => ({ nome: tag })),
+            disconnect: tagsForRemove.map((tag) => ({ name: tag })),
           },
         },
       });
     }
 
-    if (tagsParaAdicionar.length > 0) {
+    if (tagsForAdd.length > 0) {
       return await prisma.faq.update({
         where: { id: idFaq },
         include: {
           tags: {
             select: {
-              nome: true,
+              name: true,
             },
           },
         },
         data: {
           tags: {
-            connectOrCreate: tagsParaAdicionar.map((nomeTag) => ({
-              where: { nome: nomeTag.toLowerCase() },
-              create: { nome: nomeTag.toLowerCase() },
+            connectOrCreate: tagsForAdd.map((nameTag) => ({
+              where: { name: nameTag.toLowerCase() },
+              create: { name: nameTag.toLowerCase() },
             })),
           },
         },
@@ -171,83 +169,83 @@ export class FaqService {
     }
   }
 
-  private async pegarImagemPublicaUrl(idArquivo: string) {
-    const arquivo = await this.prismaService.arquivo.findUnique({
-      where: { id: idArquivo },
+  private async getImagePublicUrl(fileId: string) {
+    const file = await this.prismaService.file.findUnique({
+      where: { id: fileId },
     });
 
-    if (!arquivo) {
-      throw new AppErrorNotFound('Arquivo não encontrado');
+    if (!file) {
+      throw new AppErrorNotFound('File not found');
     }
 
-    const arquivoPublico = await this.fileService.pegarArquivoPorId(arquivo.id);
+    const filePublic = await this.fileService.getFileById(file.id);
 
-    if (!arquivoPublico) {
-      throw new AppErrorNotFound('Arquivo público não encontrado');
+    if (!filePublic) {
+      throw new AppErrorNotFound('File public not found');
     }
 
-    return arquivoPublico.url;
+    return filePublic.url;
   }
 
-  private validarQuantidadeArquivos(files: Express.Multer.File[]) {
+  private validateLimitFiles(files: Express.Multer.File[]) {
     if (!files || files?.length === 0) {
-      throw new AppErrorBadRequest('Nenhum arquivo enviado');
+      throw new AppErrorBadRequest('None file sent');
     }
 
     if (files.length > 1) {
-      throw new AppErrorBadRequest('Você pode enviar apenas um arquivo');
+      throw new AppErrorBadRequest('You can send only a file');
     }
 
     return files[0];
   }
 
-  async criarFaq(data: CriarFaqDto) {
-    const slug = await this.normalizaSlug(data.titulo);
-    const resumo = `${data.conteudo.substring(0, 100)}...`;
+  async createFaq(data: CreateFaqDto) {
+    const slug = await this.normalizeSlug(data.title);
+    const summary = `${data.content.substring(0, 100)}...`;
 
     const { tags, ...faqData } = data;
 
-    const resposta = await this.prismaService.$transaction(async (prisma) => {
-      const faqCriada = await prisma.faq.create({
+    const reply = await this.prismaService.$transaction(async (prisma) => {
+      const faqCreated = await prisma.faq.create({
         data: {
           ...faqData,
           slug: slug,
-          resumo: resumo,
+          summary: summary,
         },
       });
-      return await this.editarTags(faqCriada.id, data.tags, prisma);
+      return await this.editTags(faqCreated.id, data.tags, prisma);
     });
 
-    return resposta;
+    return reply;
   }
 
-  async editarFaq(id: string, data: AtualizarFaqDto) {
-    const slug = data.titulo ? await this.normalizaSlug(data.titulo) : {};
-    const resumo = data.conteudo ? `${data.conteudo.substring(0, 100)}...` : {};
+  async editFaq(id: string, data: UpdateFaqDto) {
+    const slug = data.title ? await this.normalizeSlug(data.title) : {};
+    const summary = data.content ? `${data.content.substring(0, 100)}...` : {};
 
     const { tags, ...faqData } = data;
 
-    const resposta = this.prismaService.$transaction(async (prisma) => {
+    const reply = this.prismaService.$transaction(async (prisma) => {
       await prisma.faq.update({
         where: { id },
         data: {
           ...faqData,
           slug: slug,
-          resumo: resumo,
+          summary: summary,
         },
       });
-      return await this.editarTags(id, data.tags, prisma);
+      return await this.editTags(id, data.tags, prisma);
     });
 
-    return resposta;
+    return reply;
   }
 
-  async listarFaqs(filtros: ListarFaqDto) {
-    const { status, categoria, tags } = filtros;
+  async listFaqs(filters: ListFaqDto) {
+    const { status, category, tags } = filters;
 
-    const pagina = filtros.pagina ? parseInt(filtros.pagina) : 1;
-    const quantidade = filtros.quantidade ? parseInt(filtros.quantidade) : 10;
-    const pesquisa = filtros.pesquisa ? filtros.pesquisa : '';
+    const page = filters.page ? parseInt(filters.page) : 1;
+    const limit = filters.limit ? parseInt(filters.limit) : 10;
+    const search = filters.search ? filters.search : '';
 
     const tagsArray = tags ? tags.split(',') : [];
 
@@ -256,76 +254,76 @@ export class FaqService {
         {
           OR: [
             {
-              titulo: {
-                contains: pesquisa,
+              title: {
+                contains: search,
                 mode: 'insensitive',
               },
             },
             {
-              conteudo: {
-                contains: pesquisa,
+              content: {
+                contains: search,
                 mode: 'insensitive',
               },
             },
           ],
         },
-        status ? { status: filtros.status } : {},
-        categoria ? { categoria: filtros.categoria } : {},
+        status ? { status: filters.status } : {},
+        category ? { category: filters.category } : {},
         tagsArray && tagsArray.length > 0
           ? {
               tags: {
                 some: {
-                  nome: {
+                  name: {
                     in: tagsArray,
                   },
                 },
               },
             }
           : {},
-        { status: 'publicado' },
+        { status: 'published' },
       ],
     };
 
     const faqs = await this.prismaService.faq.findMany({
       where,
       select: this.FaqSelectList,
-      skip: (pagina - 1) * quantidade,
-      take: quantidade,
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    const respostaFormatada = await this.formataTags(faqs);
+    const replyFormatted = await this.formatTags(faqs);
 
-    return respostaFormatada;
+    return replyFormatted;
   }
 
-  async obterFaqPorId(id: string) {
+  async getFaqById(id: string) {
     const faq = await this.prismaService.faq.findUnique({
       where: { id },
       include: { tags: true },
     });
 
     if (!faq) {
-      throw new AppErrorNotFound('Faq não encontrado');
+      throw new AppErrorNotFound('Faq not found');
     }
-    const respostaFormatada = await this.formataTags(faq);
-    return respostaFormatada;
+    const replyFormatted = await this.formatTags(faq);
+    return replyFormatted;
   }
 
-  async obterFaqPorSlug(slug: string) {
+  async getFaqBySlug(slug: string) {
     const faq = await this.prismaService.faq.findUnique({
       where: { slug },
       include: { tags: true },
     });
 
     if (!faq) {
-      throw new AppErrorNotFound('Faq não encontrado');
+      throw new AppErrorNotFound('Faq not found');
     }
-    const respostaFormatada = await this.formataTags(faq);
-    return respostaFormatada;
+    const replyFormatted = await this.formatTags(faq);
+    return replyFormatted;
   }
 
-  async contarViews(id: string) {
-    await this.obterFaqPorId(id);
+  async countViews(id: string) {
+    await this.getFaqById(id);
 
     return await this.prismaService.faq.update({
       where: { id },
@@ -335,38 +333,38 @@ export class FaqService {
     });
   }
 
-  async deletarFaq(id: string) {
-    await this.obterFaqPorId(id);
+  async deleteFaq(id: string) {
+    await this.getFaqById(id);
     return await this.prismaService.faq.delete({
       where: { id },
     });
   }
 
-  async salvarImagemPublica(params: {
-    usuarioId: string;
-    arquivo: Express.Multer.File[];
+  async saveImagePublic(params: {
+    userId: string;
+    file: Express.Multer.File[];
   }) {
-    const arquivo = this.validarQuantidadeArquivos(params.arquivo);
+    const file = this.validateLimitFiles(params.file);
 
-    const resposta = await this.prismaService.$transaction(async (prisma) => {
-      const imagemPublica = await prisma.imagemPublica.create({});
+    const reply = await this.prismaService.$transaction(async (prisma) => {
+      const publicImage = await prisma.publicImage.create({});
 
-      const arquivoSalvo = await this.fileService.salvarArquivo({
-        file: arquivo,
-        entidade: 'imagem_publica',
-        usuarioId: params.usuarioId,
-        entidadeId: imagemPublica.id,
+      const fileSaved = await this.fileService.saveFile({
+        file: file,
+        entity: 'image_public',
+        userId: params.userId,
+        entityId: publicImage.id,
       });
 
-      await prisma.imagemPublica.update({
-        where: { id: imagemPublica.id },
+      await prisma.publicImage.update({
+        where: { id: publicImage.id },
         data: {
-          idArquivo: arquivoSalvo.id,
+          fileId: fileSaved.id,
         },
       });
 
-      const url = gerarStringUrlImagemPublica({
-        imagemId: imagemPublica.id,
+      const url = generateStringUrlImagePublic({
+        imageId: publicImage.id,
       });
 
       return {
@@ -374,18 +372,18 @@ export class FaqService {
       };
     });
 
-    return resposta;
+    return reply;
   }
 
-  async pegarImagemPublica(id: string) {
-    const imagemPublica = await this.prismaService.imagemPublica.findUnique({
+  async getImagePublic(id: string) {
+    const publicImage = await this.prismaService.publicImage.findUnique({
       where: { id },
     });
 
-    if (!imagemPublica) {
-      throw new AppErrorNotFound('Imagem pública não encontrada');
+    if (!publicImage) {
+      throw new AppErrorNotFound('Image public not found');
     }
 
-    return await this.pegarImagemPublicaUrl(imagemPublica.idArquivo);
+    return await this.getImagePublicUrl(publicImage.fileId);
   }
 }

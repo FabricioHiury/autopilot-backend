@@ -1,12 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Novu } from '@novu/node';
-import { TiposNotificacaoEnum } from 'src/utils/enum/notificacoes.enum';
+import { TypesNotificationEnum } from 'src/utils/enum/notifications.enum';
 
 interface TriggerPushParams {
   subscriberId: string;
-  tipo: TiposNotificacaoEnum;
-  mensagem: string;
-  idReferencia?: string;
+  type: TypesNotificationEnum;
+  message: string;
+  idReference?: string;
 }
 
 interface SubscriberParams {
@@ -29,7 +29,9 @@ export class NovuService implements OnModuleInit {
       this.isConfigured = true;
       this.logger.log('Novu SDK initialized');
     } else {
-      this.logger.warn('NOVU_API_KEY not configured - push notifications disabled');
+      this.logger.warn(
+        'NOVU_API_KEY not configured - push notifications disabled',
+      );
     }
   }
 
@@ -46,9 +48,14 @@ export class NovuService implements OnModuleInit {
         deviceTokens: [params.expoPushToken],
       });
 
-      this.logger.log(`Subscriber ${params.subscriberId} updated with Expo token`);
+      this.logger.log(
+        `Subscriber ${params.subscriberId} updated with Expo token`,
+      );
     } catch (error) {
-      this.logger.error(`Error creating/updating subscriber: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error creating/updating subscriber: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
@@ -61,15 +68,20 @@ export class NovuService implements OnModuleInit {
           subscriberId: params.subscriberId,
         },
         payload: {
-          tipo: params.tipo,
-          mensagem: params.mensagem,
-          idReferencia: params.idReferencia || '',
+          type: params.type,
+          message: params.message,
+          idReference: params.idReference || '',
         },
       });
 
-      this.logger.log(`Push notification triggered for subscriber ${params.subscriberId}`);
+      this.logger.log(
+        `Push notification triggered for subscriber ${params.subscriberId}`,
+      );
     } catch (error) {
-      this.logger.error(`Error triggering push notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error triggering push notification: ${error.message}`,
+        error.stack,
+      );
     }
   }
 }

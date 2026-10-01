@@ -3,7 +3,7 @@ import { LoginDto } from './dto/login.dto';
 import { Payload } from './entities/payload.entity';
 import { PrismaService } from 'src/persistence/database/prisma/prisma.service';
 import { MailService } from 'src/utils/mail/mail.service';
-import { Usuario } from '@prisma/client';
+import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
   AppErrorInternal,
@@ -11,11 +11,11 @@ import {
   AppErrorUnauthorized,
 } from 'src/utils/errors/app-errors';
 import { JwtService } from '@nestjs/jwt';
-import { PERFIS_KEY } from './roles-decorators/perfil/perfil.decorator';
-import { USUARIO_PERFIL } from 'src/core/usuario/enum/perfil.enum';
-import { STATUS_CLIENTE } from 'src/core/loja/modules/cliente/enum/cliente.enum';
+import { PROFILES_KEY } from './roles-decorators/profile/profile.decorator';
+import { USER_PROFILE } from 'src/core/user/enum/profile.enum';
+import { STATUS_CUSTOMER } from 'src/core/store/modules/customer/enum/customer.enum';
 import { isUUID } from 'class-validator';
-import { PERMISSOES_AUTOPILOT } from 'src/core/usuario/enum/permissoes_funcionalidades.enum';
+import { PERMISSIONS_AUTOPILOT } from 'src/core/user/enum/permissions_features.enum';
 import { NovuService } from 'src/core/novu/novu.service';
 
 @Injectable()
@@ -25,27 +25,32 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly novuService: NovuService,
-  ) { }
+  ) {}
 
-  private async validarEGerarToken(
-    usuario: Usuario,
-    senhaParaValidacao: string,
-    tipoToken: 'access' | 'reset',
+  private async validateANDGenerateToken(
+    user: User,
+    passwordForValidation: string,
+    typeToken: 'access' | 'reset',
+    storeId?: string,
   ): Promise<string> {
-    const { senha } = usuario;
+    const { password } = user;
 
-    if (tipoToken === 'access') {
-      const senhaValida = await bcrypt.compare(senhaParaValidacao, senha);
-      if (!senhaValida) throw new AppErrorUnauthorized('Credenciais inválidas');
+    if (typeToken === 'access') {
+      const passwordValid = await bcrypt.compare(
+        passwordForValidation,
+        password,
+      );
+      if (!passwordValid) throw new AppErrorUnauthorized('Invalid credentials');
     }
     // gerando payload
     const payload: Payload = {
-      sub: usuario.id,
+      sub: user.id,
+      ...(storeId ? { storeId } : {}),
     };
 
     let token: string;
 
-    if (tipoToken === 'reset') {
+    if (typeToken === 'reset') {
       payload.reset = true;
       token = this.jwtService.sign(payload, {
         expiresIn: '4h',
@@ -65,18 +70,18 @@ export class AuthService {
   }
 
   async login(signAuthDto: LoginDto) {
-    const { email, senha, expoPushToken } = signAuthDto;
+    const { email, password, expoPushToken } = signAuthDto;
 
     try {
-      const usuario = await this.prismaService.usuario.findUnique({
+      const user = await this.prismaService.user.findUnique({
         where: { email },
         include: {
-          lojista: { include: { loja: true } },
-          colaborador: {
+          storeOwner: { include: { store: true } },
+          employee: {
             include: {
-              loja: {
+              store: {
                 include: {
-                  lojista: true,
+                  storeOwner: true,
                 },
               },
             },
@@ -84,221 +89,233 @@ export class AuthService {
         },
       });
 
-      if (!usuario) {
-        throw new AppErrorUnauthorized('Credenciais inválidas');
+      if (!user) {
+        throw new AppErrorUnauthorized('Invalid credentials');
       }
 
-      if (usuario.status !== STATUS_CLIENTE.ATIVO) {
-        throw new AppErrorUnauthorized('Usuário inativo, pendente ou bloqueado');
+      if (user.status !== STATUS_CUSTOMER.ACTIVE) {
+        throw new AppErrorUnauthorized('User inactive, pending or blocked');
       }
 
-      let idLoja: string | null;
-      let nomeLoja: string | null;
+      let storeId: string | null;
+      let nameStore: string | null;
 
-      if (usuario.perfil === USUARIO_PERFIL.LOJISTA) {
+      if (user.profile === USER_PROFILE.STOREOWNER) {
         if (
-          !usuario.lojista ||
-          usuario.lojista.status !== STATUS_CLIENTE.ATIVO
+          !user.storeOwner ||
+          user.storeOwner.status !== STATUS_CUSTOMER.ACTIVE
         ) {
-          throw new AppErrorUnauthorized('Usuário inativo ou bloqueado');
+          throw new AppErrorUnauthorized('User inactive or blocked');
         }
 
-        idLoja = usuario.lojista.loja.id;
-        nomeLoja = usuario.lojista.loja.nomeEmpresa;
+        storeId = user.storeOwner.store.id;
+        nameStore = user.storeOwner.store.companyName;
       }
 
-      if (usuario.perfil === USUARIO_PERFIL.USUARIO) {
+      if (user.profile === USER_PROFILE.USER) {
         if (
-          !usuario.colaborador ||
-          usuario.colaborador.status !== STATUS_CLIENTE.ATIVO ||
-          usuario.colaborador.loja.lojista.status !== STATUS_CLIENTE.ATIVO
+          !user.employee ||
+          user.employee.status !== STATUS_CUSTOMER.ACTIVE ||
+          user.employee.store.storeOwner.status !== STATUS_CUSTOMER.ACTIVE
         ) {
-          throw new AppErrorUnauthorized('Usuário inativo ou bloqueado');
+          throw new AppErrorUnauthorized('User inactive or blocked');
         }
 
-        idLoja = usuario.colaborador.loja.id;
-        nomeLoja = usuario.colaborador.loja.nomeEmpresa;
+        storeId = user.employee.store.id;
+        nameStore = user.employee.store.companyName;
       }
 
-      const token = await this.validarEGerarToken(usuario, senha, 'access');
+      const token = await this.validateANDGenerateToken(
+        user,
+        password,
+        'access',
+        storeId,
+      );
 
       if (expoPushToken) {
-        await this.prismaService.usuario.update({
-          where: { id: usuario.id },
+        await this.prismaService.user.update({
+          where: { id: user.id },
           data: { expoPushToken },
         });
 
-        this.novuService.createOrUpdateSubscriber({
-          subscriberId: usuario.id,
-          email: usuario.email,
-          firstName: usuario.nome,
-          expoPushToken,
-        }).catch(() => {});
+        this.novuService
+          .createOrUpdateSubscriber({
+            subscriberId: user.id,
+            email: user.email,
+            firstName: user.name,
+            expoPushToken,
+          })
+          .catch(() => {});
       }
 
       return {
         token,
-        perfil: usuario.perfil,
-        nome: usuario.nome || null,
-        nomeEmpresa: nomeLoja || null,
-        idLoja: idLoja || null,
-        id: usuario.id,
+        profile: user.profile,
+        name: user.name || null,
+        companyName: nameStore || null,
+        storeId: storeId || null,
+        id: user.id,
       };
     } catch (error) {
       throw error;
     }
   }
 
-  async validarAuth(payload: Payload) {
+  async validateAuth(payload: Payload) {
     const { sub } = payload;
 
     if (typeof sub !== 'string' || !isUUID(sub)) {
-      throw new AppErrorUnauthorized('Token inválido');
+      throw new AppErrorUnauthorized('Invalid token');
     }
 
-    const usuario = await this.prismaService.usuario.findUnique({
+    const user = await this.prismaService.user.findUnique({
       where: { id: sub },
       include: {
-        lojista: { include: { loja: true } },
-        colaborador: { include: { loja: true } },
+        storeOwner: { include: { store: true } },
+        employee: { include: { store: true } },
       },
     });
 
-    if (!usuario) {
+    if (
+      !user ||
+      user.status !== 'active' ||
+      payload.reset ||
+      (user.employee && user.employee.status !== 'active') ||
+      (user.storeOwner && user.storeOwner.status !== 'active')
+    ) {
       return null;
     }
 
+    const currentStoreId =
+      user.storeOwner?.store?.id ?? user.employee?.store?.id ?? null;
+    if (payload.storeId && payload.storeId !== currentStoreId) return null;
     return {
-      id: usuario.id,
-      idLoja: usuario.lojista?.loja?.id ?? usuario.colaborador?.loja?.id ?? null,
-      email: usuario.email,
-      perfil: usuario.perfil,
+      id: user.id,
+      storeId: user.storeOwner?.store?.id ?? user.employee?.store?.id ?? null,
+      email: user.email,
+      profile: user.profile,
     };
   }
 
-
-  async enviarEmailDeRecuperacao(email: string): Promise<void> {
+  async sendEmailOfRecovery(email: string): Promise<void> {
     try {
-      const usuario = await this.prismaService.usuario.findUnique({
+      const user = await this.prismaService.user.findUnique({
         where: { email },
       });
 
-      if (!usuario) {
-        throw new AppErrorNotFound('Usuário não encontrado');
+      if (!user) {
+        throw new AppErrorNotFound('User not found');
       }
 
-      const token = await this.validarEGerarToken(
-        usuario,
-        usuario.senha,
+      const token = await this.validateANDGenerateToken(
+        user,
+        user.password,
         'reset',
       );
 
-      const resetUrl = `${process.env.FRONTEND_URL}/autenticacao/redefinir-senha?token=${token}`;
+      const resetUrl = `${process.env.FRONTEND_URL}/authentication/reset-password?token=${token}`;
 
-      await this.mailService.sendPasswordResetEmail(
-        email,
-        resetUrl,
-        usuario.nome,
-      );
+      await this.mailService.sendPasswordResetEmail(email, resetUrl, user.name);
     } catch (err) {
       console.error(err);
       throw err;
     }
   }
 
-  async validarResetToken(token: string): Promise<Usuario> {
+  async validateResetToken(token: string): Promise<User> {
     const secret = process.env.JWT_RESET_SECRET;
     if (!secret) {
-      throw new Error('Token inválido');
+      throw new Error('Invalid token');
     }
-  
+
     let payload: Payload;
     try {
       payload = this.jwtService.verify(token, { secret }) as Payload;
-    } catch (e: any) {
-      throw new AppErrorUnauthorized('Token inválido ou expirado');
+    } catch (and: any) {
+      throw new AppErrorUnauthorized('Invalid token or expired');
     }
-  
+
     if (!payload?.reset) {
-      throw new AppErrorUnauthorized('Token inválido');
+      throw new AppErrorUnauthorized('Invalid token');
     }
-  
+
     const { sub } = payload;
 
     if (typeof sub !== 'string' || !isUUID(sub)) {
-      throw new AppErrorUnauthorized('Token inválido');
+      throw new AppErrorUnauthorized('Invalid token');
     }
-  
-    const usuario = await this.prismaService.usuario.findUnique({
+
+    const user = await this.prismaService.user.findUnique({
       where: { id: sub },
     });
-  
-    if (!usuario) {
-      throw new AppErrorNotFound('Usuário não encontrado');
+
+    if (!user) {
+      throw new AppErrorNotFound('User not found');
     }
-  
-    return usuario as Usuario;
+
+    return user as User;
   }
-  
-  async redefinirSenha(resetToken: string, newPassword: string) {
-    const usuario = (await this.validarResetToken(resetToken)) as Usuario;
+
+  async resetPassword(resetToken: string, newPassword: string) {
+    const user = (await this.validateResetToken(resetToken)) as User;
 
     let hashedPassword: string;
 
     try {
       hashedPassword = await bcrypt.hash(newPassword, 10);
     } catch (err) {
-      throw new AppErrorInternal('Erro ao criptografar senha');
+      throw new AppErrorInternal('Failed to criptografar password');
     }
 
-    await this.prismaService.usuario.update({
-      where: { id: usuario.id },
+    await this.prismaService.user.update({
+      where: { id: user.id },
       data: {
-        senha: hashedPassword,
+        password: hashedPassword,
       },
     });
 
     return true;
   }
 
-  async pegarAcessoBackoffice(idUsuario: string) {
+  async getAccessBackoffice(userId: string) {
     try {
-      const usuario = await this.prismaService.usuario.findUnique({
-        where: { 
-          id: idUsuario,
-          perfil: USUARIO_PERFIL.AUTOPILOT,
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+          profile: USER_PROFILE.AUTOPILOT,
           status: {
-            not: 'excluido'
-          }
+            not: 'deleted',
+          },
         },
         include: {
-          permissao: {
+          permission: {
             where: {
-              status: 'ativo'
-            }
-          }
-        }
+              status: 'active',
+            },
+          },
+        },
       });
 
-      if (!usuario) {
-        throw new AppErrorNotFound('Usuário admin não encontrado');
+      if (!user) {
+        throw new AppErrorNotFound('User admin not found');
       }
 
-      // Extrair apenas as funcionalidades das permissões
-      const permissoes = usuario.permissao?.map((permissao) => permissao.funcionalidade) ?? [];
+      // Extract only as features of permissões
+      const permissions =
+        user.permission?.map((permission) => permission.feature) ?? [];
 
       return {
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        perfil: usuario.perfil,
-        cargo: ['Admin'],
-        permissao: permissoes,
-        status: usuario.status,
-        consultaEm: new Date()
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        profile: user.profile,
+        role: ['Admin'],
+        permission: permissions,
+        status: user.status,
+        queryAt: new Date(),
       };
     } catch (error) {
-      console.error('Erro ao buscar permissões do usuário:', error);
+      console.error('Failed to find permissions of user:', error);
       throw error;
     }
   }

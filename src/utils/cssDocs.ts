@@ -16,15 +16,15 @@ body>div:first-child::before {
   top: 0;
 }
 h1.section-header {
-  font-size: 2.5em !important;
+  font-size: 2.5at !important;
   font-weight: 700 !important;
 }
 h2.section-header {
-  font-size: 1.8em !important;
+  font-size: 1.8at !important;
   font-weight: 700 !important;
 }
 h3.section-header {
-    font-size: 1.2em !important;
+    font-size: 1.2at !important;
 }
 div.sidebar{
   padding-top: calc(90px + 1rem) !important;
@@ -42,6 +42,6 @@ div.section-content {
   padding-top: 1rem !important;
 }
 div.request-header {
-    font-size: 1.2em !important;
+    font-size: 1.2at !important;
 }
 `;

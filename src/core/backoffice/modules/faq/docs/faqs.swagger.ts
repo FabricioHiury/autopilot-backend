@@ -7,181 +7,180 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { CriarFaqDto } from '../dto/criar-faq.dto';
+import { CreateFaqDto } from '../dto/create-faq.dto';
 import {
-  CriarFaqBadRequest,
-  CriarFaqSucesso,
-} from './endpoints/criar-faq.swagger';
+  CreateFaqBadRequest,
+  CreateFaqSuccess,
+} from './endpoints/create-faq.swagger';
 import {
-  ListarFaqsErroBadRequest,
-  ListarFaqSucesso,
-} from './endpoints/listar-faqs.swagger';
+  ListFaqsErrorBadRequest,
+  ListFaqSuccess,
+} from './endpoints/list-faqs.swagger';
 import {
-  ObterFaqErroBadRequest,
-  ObterFaqErroNotFound,
-  ObterFaqSucesso,
-} from './endpoints/obter-faq-id.swagger';
+  GetFaqErrorBadRequest,
+  GetFaqErrorNotFound,
+  GetFaqSuccess,
+} from './endpoints/get-faq-id.swagger';
 
-export function criarFaqDoc() {
+export function createFaqDoc() {
   const description = '';
   return applyDecorators(
     ApiOperation({
-      summary: 'Criar | Editar FAQ',
+      summary: 'Create | Edit FAQ',
     }),
 
-    ApiBody({ type: CriarFaqDto }),
+    ApiBody({ type: CreateFaqDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: CriarFaqSucesso,
+      type: CreateFaqSuccess,
     }),
 
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
-      type: CriarFaqBadRequest,
+      type: CreateFaqBadRequest,
     }),
   );
 }
 
-export function listarFaqDoc() {
+export function listFaqDoc() {
   const description = '';
   return applyDecorators(
     ApiOperation({
-      summary: 'Listar FAQs',
+      summary: 'List FAQs',
       description,
     }),
     ApiQuery({
       name: 'page',
       required: false,
       type: Number,
-      description: 'Número da página',
+      description: 'Number of page',
     }),
     ApiQuery({
-      name: 'quantidade',
+      name: 'limit',
       required: false,
       type: Number,
-      description: 'Limite de resultados',
+      description: 'Limit of results',
     }),
     ApiQuery({
-      name: 'pesquisa',
+      name: 'search',
       required: false,
       type: String,
-      description: 'Texto para pesquisar',
+      description: 'Text for search',
     }),
     ApiQuery({
       name: 'tags',
       required: false,
       type: String,
-      description:
-        'nomes das tags separadas por vírgula(ex: novo,atendimento,duvida)',
+      description: 'names of tags separated by comma(ex: new,deal,duvida)',
     }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: ListarFaqSucesso,
+      type: ListFaqSuccess,
     }),
 
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
-      type: ListarFaqsErroBadRequest,
+      type: ListFaqsErrorBadRequest,
     }),
   );
 }
 
-export function ObterFaqPorIdDoc() {
+export function GetFaqByIdDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Obter FAQ por ID',
+      summary: 'Get FAQ by ID',
     }),
     ApiParam({
       name: 'id',
       type: Number,
-      description: 'ID do faq',
+      description: 'ID of faq',
     }),
     ApiResponse({
       status: HttpStatus.OK,
-      type: ObterFaqSucesso,
+      type: GetFaqSuccess,
     }),
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
-      type: ObterFaqErroBadRequest,
+      type: GetFaqErrorBadRequest,
     }),
     ApiResponse({
       status: HttpStatus.NOT_FOUND,
-      type: ObterFaqErroNotFound,
+      type: GetFaqErrorNotFound,
     }),
   );
 }
 
-export function ObterFaqPorSlugDoc() {
+export function GetFaqBySlugDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Obter FAQ por Slug',
+      summary: 'Get FAQ by Slug',
     }),
     ApiParam({
       name: 'slug',
       type: String,
-      description: 'Slug do faq',
+      description: 'Slug of faq',
     }),
     ApiResponse({
       status: HttpStatus.OK,
-      type: ObterFaqSucesso,
+      type: GetFaqSuccess,
     }),
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
-      type: ObterFaqErroBadRequest,
+      type: GetFaqErrorBadRequest,
     }),
     ApiResponse({
       status: HttpStatus.NOT_FOUND,
-      type: ObterFaqErroNotFound,
+      type: GetFaqErrorNotFound,
     }),
   );
 }
 
-export function ContarViewsDoc() {
+export function CountViewsDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Contar views FAQ',
+      summary: 'Count views FAQ',
     }),
     ApiHeader({
       name: 'x-api-guard',
-      description: 'x-api-guard para poder acessar a rota',
+      description: 'x-api-guard for poder access a rota',
     }),
     ApiResponse({
       status: HttpStatus.OK,
-      type: ObterFaqSucesso,
+      type: GetFaqSuccess,
     }),
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
-      type: ObterFaqErroBadRequest,
+      type: GetFaqErrorBadRequest,
     }),
 
     ApiResponse({
       status: HttpStatus.NOT_FOUND,
-      type: ObterFaqErroNotFound,
+      type: GetFaqErrorNotFound,
     }),
   );
 }
 
-export function DeletarFaqDoc() {
+export function DeleteFaqDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Deletar FAQ',
+      summary: 'Delete FAQ',
     }),
 
     ApiParam({
       name: 'id',
       type: Number,
-      description: 'ID do faq',
+      description: 'ID of faq',
     }),
     ApiResponse({
       status: HttpStatus.OK,
-      type: ObterFaqSucesso,
+      type: GetFaqSuccess,
     }),
 
     ApiResponse({
       status: HttpStatus.NOT_FOUND,
-      type: ObterFaqErroNotFound,
+      type: GetFaqErrorNotFound,
     }),
   );
 }

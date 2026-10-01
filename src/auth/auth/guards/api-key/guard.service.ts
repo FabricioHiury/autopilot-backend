@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-
+import { timingSafeEqual } from 'crypto';
 @Injectable()
 export class ApiKeyService {
-  private readonly validApiKey = process.env.API_KEY;
-
   validateApiKey(apiKey: string): boolean {
-    return apiKey === this.validApiKey;
+    const expected = process.env.MICROSERVICE_TOKEN || process.env.API_KEY;
+    if (!expected || typeof apiKey !== 'string') return false;
+    const a = Buffer.from(apiKey),
+      b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
   }
 }

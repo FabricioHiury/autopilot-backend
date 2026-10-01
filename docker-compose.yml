@@ -1,10 +1,47 @@
 services:
-  autopilot-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: always
-    ports:
-      - "3003:3003"
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
     environment:
-      - NODE_ENV=production
+      PORT: 3003
+      DATABASE_URL: postgresql://autopilot:autopilot@postgres:5432/autopilot?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ''
+    ports:
+      - '3003:3003'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['sh', '-c', 'npx prisma migrate deploy && node dist/main']
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autopilot
+      POSTGRES_PASSWORD: autopilot
+      POSTGRES_DB: autopilot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U autopilot']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  postgres_data:
+  redis_data:

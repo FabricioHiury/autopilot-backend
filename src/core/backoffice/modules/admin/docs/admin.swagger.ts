@@ -1,82 +1,82 @@
 import { applyDecorators, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
-import { CriarUsuarioAdminDto } from '../dto/criar-usuario-admin.dto';
-import { CriarUsuarioAdminSucesso } from './endpoints/criar-usuario-admin';
-import { ConcederPermissoesSucesso } from './endpoints/conceder-permissoes';
-import { PermissoesAdminDto } from '../dto/permissoes-admin.dto';
-import { RemoverPermissoesSucesso } from './endpoints/remover-permissoes';
-import { EditarAdminLogadoSucesso } from './endpoints/editar-admin-logado';
-import { EditarUsuarioAdminSucesso } from './endpoints/editar-usuario-admin';
-import { EditarUsuarioAdminDto } from '../dto/editar-usuario-admin.dto';
-import { EditarAdminLogadoDto } from '../dto/editar-admin-logado.dto';
-import { DeletarUsuarioAdminSucesso } from './endpoints/deletar-usuario-admin';
-import { ListarUsuariosAdminDto } from '../dto/listar-usuarios-admin.dto';
-import { ListarUsuariosAdminSucesso } from './endpoints/listar-usuarios-admin';
-import { BuscarAdminPorIdSucesso } from './endpoints/buscar-admin-por-id';
-import { BuscarDadosAdminLogadoSucesso } from './endpoints/buscar-dados-admin-logado';
-import { ListarPermissoesValidasSucesso } from './endpoints/listar-permissoes-validas';
-import { PERMISSOES_AUTOPILOT } from 'src/core/usuario/enum/permissoes_funcionalidades.enum';
+import { CreateUserAdminDto } from '../dto/create-user-admin.dto';
+import { CreateUserAdminSuccess } from './endpoints/create-user-admin';
+import { GrantPermissionsSuccess } from './endpoints/grant-permissions';
+import { PermissionsAdminDto } from '../dto/permissions-admin.dto';
+import { RemovePermissionsSuccess } from './endpoints/remove-permissions';
+import { EditAdminLoggedInSuccess } from './endpoints/edit-admin-loggedIn';
+import { EditUserAdminSuccess } from './endpoints/edit-user-admin';
+import { EditUserAdminDto } from '../dto/edit-user-admin.dto';
+import { EditAdminLoggedInDto } from '../dto/edit-admin-loggedIn.dto';
+import { DeleteUserAdminSuccess } from './endpoints/delete-user-admin';
+import { ListUsersAdminDto } from '../dto/list-users-admin.dto';
+import { ListUsersAdminSuccess } from './endpoints/list-users-admin';
+import { FindAdminByIdSuccess } from './endpoints/find-admin-by-id';
+import { FindDataAdminLoggedInSuccess } from './endpoints/find-data-admin-loggedIn';
+import { ListPermissionsValidSuccess } from './endpoints/list-permissions-valid';
+import { PERMISSIONS_AUTOPILOT } from 'src/core/user/enum/permissions_features.enum';
 
-const description = `Necessário token de autenticação de um usuário com perfil "autopilot"`;
+const description = `Requires token of authentication of a user with profile "autopilot"`;
 
-export function ListarPermissoesValidasDoc() {
+export function ListPermissionsValidDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Lista todas as permissões de backoffice possíveis do sistema`,
+      summary: `List all the permissions of backoffice available of system`,
       description,
     }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: ListarPermissoesValidasSucesso,
+      type: ListPermissionsValidSuccess,
     }),
   );
 }
 
-export function ListarUsuariosAdminDoc() {
+export function ListUsersAdminDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Lista usuários com perfil "autopilot"`,
+      summary: `List users with profile "autopilot"`,
       description:
         description +
-        ` . Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_VER_USUARIOS_ADMIN}\n\nOBS: Os parâmetros de filtragem só aparecem na resposta caso sejam enviados na requisição`,
+        ` . Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_VIEW_USERS_ADMIN}\n\nOBS: Os parameters of filtragem só aparecem in reply case sejam sent in request`,
     }),
 
-    ApiBody({ type: ListarUsuariosAdminDto }),
+    ApiBody({ type: ListUsersAdminDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: ListarUsuariosAdminSucesso,
+      type: ListUsersAdminSuccess,
     }),
   );
 }
 
-export function BuscarDadosAdminLogadoDoc() {
+export function FindDataAdminLoggedInDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Retorna os dados do usuário com perfil "autopilot" logado`,
+      summary: `Returns the data of user with profile "autopilot" loggedIn`,
       description,
     }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: BuscarDadosAdminLogadoSucesso,
+      type: FindDataAdminLoggedInSuccess,
     }),
   );
 }
 
-export function BuscarAdminPorIdDoc() {
+export function FindAdminByIdDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Busca um usuário com perfil "autopilot" por id`,
+      summary: `Search a user with profile "autopilot" by id`,
       description:
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_VER_USUARIOS_ADMIN}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_VIEW_USERS_ADMIN}`,
     }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: BuscarAdminPorIdSucesso,
+      type: FindAdminByIdSuccess,
     }),
 
     ApiResponse({
@@ -85,21 +85,21 @@ export function BuscarAdminPorIdDoc() {
   );
 }
 
-export function CriarUsuarioAdminDoc() {
+export function CreateUserAdminDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Cria um usuário com perfil "autopilot"`,
+      summary: `Cria a user with profile "autopilot"`,
       description:
-        `Cria um usuário do tipo admin e envia um email com os dados de acesso para o email fornecido.\n` +
+        `Cria a user of type admin and envia a email with the data of access for the email provided.\n` +
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_CRIAR_USUARIO_ADMIN}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_CREATE_USER_ADMIN}`,
     }),
 
-    ApiBody({ type: CriarUsuarioAdminDto }),
+    ApiBody({ type: CreateUserAdminDto }),
 
     ApiResponse({
       status: HttpStatus.CREATED,
-      type: CriarUsuarioAdminSucesso,
+      type: CreateUserAdminSuccess,
     }),
 
     ApiResponse({
@@ -112,20 +112,20 @@ export function CriarUsuarioAdminDoc() {
   );
 }
 
-export function EditarUsuarioAdminDoc() {
+export function EditUserAdminDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Edita um usuário com perfil "autopilot"`,
+      summary: `Edits a user with profile "autopilot"`,
       description:
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_CRIAR_USUARIO_ADMIN}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_CREATE_USER_ADMIN}`,
     }),
 
-    ApiBody({ type: EditarUsuarioAdminDto }),
+    ApiBody({ type: EditUserAdminDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: EditarUsuarioAdminSucesso,
+      type: EditUserAdminSuccess,
     }),
 
     ApiResponse({
@@ -138,18 +138,18 @@ export function EditarUsuarioAdminDoc() {
   );
 }
 
-export function EditarAdminLogadoDoc() {
+export function EditAdminLoggedInDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Edita o usuário logado`,
+      summary: `Edits o user loggedIn`,
       description,
     }),
 
-    ApiBody({ type: EditarAdminLogadoDto }),
+    ApiBody({ type: EditAdminLoggedInDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: EditarAdminLogadoSucesso,
+      type: EditAdminLoggedInSuccess,
     }),
 
     ApiResponse({
@@ -162,54 +162,54 @@ export function EditarAdminLogadoDoc() {
   );
 }
 
-export function DeletarUsuarioAdminDoc() {
+export function DeleteUserAdminDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Deleta permanentemente um usuário com perfil "autopilot"`,
+      summary: `Deletes permanentemente a user with profile "autopilot"`,
       description:
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_CRIAR_USUARIO_ADMIN}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_CREATE_USER_ADMIN}`,
     }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: DeletarUsuarioAdminSucesso,
+      type: DeleteUserAdminSuccess,
     }),
   );
 }
 
-export function ConcederPermissoesDoc() {
+export function GrantPermissionsDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Concede permissões para um usuário com perfil "autopilot"`,
+      summary: `Concede permissions for a user with profile "autopilot"`,
       description:
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_ATUALIZAR_PERMISSOES}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_UPDATE_PERMISSIONS}`,
     }),
 
-    ApiBody({ type: PermissoesAdminDto }),
+    ApiBody({ type: PermissionsAdminDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: ConcederPermissoesSucesso,
+      type: GrantPermissionsSuccess,
     }),
   );
 }
 
-export function RemoverPermissoesDoc() {
+export function RemovePermissionsDoc() {
   return applyDecorators(
     ApiOperation({
-      summary: `Remove permissões de um usuário com perfil "autopilot"`,
+      summary: `Remove permissions of a user with profile "autopilot"`,
       description:
         description +
-        `. Permissão necessária: ${PERMISSOES_AUTOPILOT.AUTOPILOT_ATUALIZAR_PERMISSOES}`,
+        `. Permission required: ${PERMISSIONS_AUTOPILOT.AUTOPILOT_UPDATE_PERMISSIONS}`,
     }),
 
-    ApiBody({ type: PermissoesAdminDto }),
+    ApiBody({ type: PermissionsAdminDto }),
 
     ApiResponse({
       status: HttpStatus.OK,
-      type: RemoverPermissoesSucesso,
+      type: RemovePermissionsSuccess,
     }),
   );
 }

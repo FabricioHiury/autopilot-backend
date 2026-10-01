@@ -16,23 +16,23 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { ViewApiKeyGuard } from 'src/auth/auth/guards/incrementa-view.guard';
 import { JwtAuthGuard } from 'src/auth/auth/guards/jwt-auth.guard';
-import { Perfil } from 'src/auth/auth/roles-decorators/perfil/perfil.decorator';
-import { PerfilGuard } from 'src/auth/auth/roles-decorators/perfil/perfil.guard';
-import { USUARIO_PERFIL } from 'src/core/usuario/enum/perfil.enum';
+import { Profile } from 'src/auth/auth/roles-decorators/profile/profile.decorator';
+import { ProfileGuard } from 'src/auth/auth/roles-decorators/profile/profile.guard';
+import { USER_PROFILE } from 'src/core/user/enum/profile.enum';
 import {
-  ContarViewsDoc,
-  criarFaqDoc,
-  DeletarFaqDoc,
-  listarFaqDoc,
-  ObterFaqPorIdDoc,
-  ObterFaqPorSlugDoc,
+  CountViewsDoc,
+  createFaqDoc,
+  DeleteFaqDoc,
+  listFaqDoc,
+  GetFaqByIdDoc,
+  GetFaqBySlugDoc,
 } from './docs/faqs.swagger';
-import { AtualizarFaqDto } from './dto/atualizar-faq.dto';
-import { CriarFaqDto } from './dto/criar-faq.dto';
-import { ListarFaqDto } from './dto/listar-faq.dto';
+import { UpdateFaqDto } from './dto/update-faq.dto';
+import { CreateFaqDto } from './dto/create-faq.dto';
+import { ListFaqDto } from './dto/list-faq.dto';
 import { FaqService } from './faq.service';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { UsuarioId } from 'src/auth/auth/decorators/usuario-id-decorator';
+import { UserId } from 'src/auth/auth/decorators/user-id-decorator';
 import { Response } from 'express';
 
 @ApiTags('FAQs')
@@ -40,78 +40,75 @@ import { Response } from 'express';
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
-  @UseGuards(JwtAuthGuard, PerfilGuard)
-  @Perfil(USUARIO_PERFIL.AUTOPILOT)
-  @criarFaqDoc()
+  @UseGuards(JwtAuthGuard, ProfileGuard)
+  @Profile(USER_PROFILE.AUTOPILOT)
+  @createFaqDoc()
   @Post()
-  async criarFaq(@Body() data: CriarFaqDto) {
-    return this.faqService.criarFaq(data);
+  async createFaq(@Body() data: CreateFaqDto) {
+    return this.faqService.createFaq(data);
   }
 
-  @listarFaqDoc()
+  @listFaqDoc()
   @Get()
-  async listarFaqs(@Query() queries: ListarFaqDto) {
-    return await this.faqService.listarFaqs(queries);
+  async listFaqs(@Query() queries: ListFaqDto) {
+    return await this.faqService.listFaqs(queries);
   }
 
-  @ObterFaqPorIdDoc()
+  @GetFaqByIdDoc()
   @Get(':id')
-  async obterFaqPorId(@Param('id') id: string) {
-    return await this.faqService.obterFaqPorId(id);
+  async getFaqById(@Param('id') id: string) {
+    return await this.faqService.getFaqById(id);
   }
 
-  @ObterFaqPorSlugDoc()
+  @GetFaqBySlugDoc()
   @Get('slug/:slug')
-  async obterFaqPorSlug(@Param('slug') slug: string) {
-    return await this.faqService.obterFaqPorSlug(slug);
+  async getFaqBySlug(@Param('slug') slug: string) {
+    return await this.faqService.getFaqBySlug(slug);
   }
 
-  @UseGuards(JwtAuthGuard, PerfilGuard)
-  @Perfil(USUARIO_PERFIL.AUTOPILOT)
-  @criarFaqDoc()
+  @UseGuards(JwtAuthGuard, ProfileGuard)
+  @Profile(USER_PROFILE.AUTOPILOT)
+  @createFaqDoc()
   @Put(':id')
-  async editarFaq(
-    @Param('id') id: string,
-    @Body() data: AtualizarFaqDto,
-  ) {
-    return await this.faqService.editarFaq(id, data);
+  async editFaq(@Param('id') id: string, @Body() data: UpdateFaqDto) {
+    return await this.faqService.editFaq(id, data);
   }
 
-  @ContarViewsDoc()
+  @CountViewsDoc()
   @Post('views/:id')
   @UseGuards(ViewApiKeyGuard)
-  async contarViews(@Param('id') id: string) {
-    return await this.faqService.contarViews(id);
+  async countViews(@Param('id') id: string) {
+    return await this.faqService.countViews(id);
   }
 
-  @UseGuards(JwtAuthGuard, PerfilGuard)
-  @Perfil(USUARIO_PERFIL.AUTOPILOT)
-  @DeletarFaqDoc()
+  @UseGuards(JwtAuthGuard, ProfileGuard)
+  @Profile(USER_PROFILE.AUTOPILOT)
+  @DeleteFaqDoc()
   @Delete(':id')
-  async deletarFaq(@Param('id') id: string) {
-    return await this.faqService.deletarFaq(id);
+  async deleteFaq(@Param('id') id: string) {
+    return await this.faqService.deleteFaq(id);
   }
 
-  @UseGuards(JwtAuthGuard, PerfilGuard)
-  @Perfil(USUARIO_PERFIL.AUTOPILOT)
+  @UseGuards(JwtAuthGuard, ProfileGuard)
+  @Profile(USER_PROFILE.AUTOPILOT)
   @UseInterceptors(AnyFilesInterceptor())
-  @Post('imagem')
-  async salvarImagemPublica(
-    @UsuarioId() idUsuario: string,
-    @UploadedFiles() arquivos: Express.Multer.File[],
+  @Post('image')
+  async saveImagePublic(
+    @UserId() userId: string,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return await this.faqService.salvarImagemPublica({
-      usuarioId: idUsuario,
-      arquivo: arquivos,
+    return await this.faqService.saveImagePublic({
+      userId: userId,
+      file: files,
     });
   }
 
-  @Get('imagens/:imagemId')
-  async pegarImagemPublica(
-    @Param('imagemId') imagemId: string,
+  @Get('imagens/:imageId')
+  async getImagePublic(
+    @Param('imageId') imageId: string,
     @Res() res: Response,
   ) {
-    const url = await this.faqService.pegarImagemPublica(imagemId);
+    const url = await this.faqService.getImagePublic(imageId);
 
     if (url) {
       res.redirect(url);

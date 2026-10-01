@@ -1,7 +1,7 @@
 export class GoogleMapsUtils {
   static generateMapsUrl(lat: number, lng: number, name?: string): string {
     const baseUrl = 'https://www.google.com/maps';
-    
+
     if (name) {
       return `${baseUrl}/place/${encodeURIComponent(name)}/@${lat},${lng},17z`;
     } else {
