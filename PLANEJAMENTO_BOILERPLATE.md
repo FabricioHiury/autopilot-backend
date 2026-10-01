@@ -347,3 +347,16 @@ Substituir chamadas legadas pelo cliente padronizado `MicroserviceClientService`
 - [ ] WebSockets ativos emitindo `message:received` e `autopilot:analysis-ready` para o front.
 - [ ] Endpoint `/store/customization` fornecendo cores e logos corretos por concessionária autenticada.
 - [ ] Docker Compose do backend rodando limpo (NestJS, Postgres, Redis) sem colisão de portas.
+
+
+## Implementação no backend — 2026-10-01
+
+- Código e diretórios do CRM renomeados para inglês, com `Deal` como entidade de negociação e preservação dos comentários existentes.
+- Schema físico traduzido, baseline e migração transacional preparados; dados de CRM preservados. Tabelas de cobrança removidas pela migração.
+- Stripe, módulos de planos/assinaturas, guards de assinatura e dashboard financeiro removidos.
+- Customização por loja autenticada implementada em `/store/customization`; alteração restrita ao proprietário.
+- Socket.io para frontend e cliente WebSocket opcional para o microsserviço implementados. Entrada por webhook permanece disponível; ambos usam fila persistente com deduplicação.
+- Módulo de IA implementado com fila Redis, validação de saída, persistência do dossiê e sugestões sujeitas à revisão humana.
+- Testes de isolamento, ingestão, IA e migração adicionados. A migração não foi executada no banco configurado do projeto.
+
+Para implantação, seguir `docs/MIGRATION.md`. O contrato a implementar no microsserviço e no frontend está em `docs/COMMUNICATION.md`. A homologação com provedores reais depende desses outros serviços e das credenciais. O Docker Compose foi atualizado, mas a execução dos contêineres depende do Docker local ativo.

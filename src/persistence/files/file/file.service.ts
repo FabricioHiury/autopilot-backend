@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { Arquivo, ArquivoUUID } from '@prisma/client';
+import { File, UuidFile } from '@prisma/client';
 import {
   AppErrorBadRequest,
   AppErrorInternal,
@@ -14,57 +14,61 @@ export class FileService {
   constructor(
     private readonly firebaseService: FirebaseService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
-  private async relacionarArquivo(params: {
-    usuarioId: string;
-    entidade: string;
-    entidadeId: string;
-    nome: string;
-    tamanho?: number;
-    tipo: string;
+  private async relateFile(params: {
+    userId: string;
+    entity: string;
+    entityId: string;
+    name: string;
+    size?: number;
+    type: string;
     url: string;
-    validade: Date;
-  }): Promise<Arquivo> {
+    expiresAt: Date;
+  }): Promise<File> {
     try {
-      const anexo = await this.prisma.arquivo.create({
+      const attachment = await this.prisma.file.create({
         data: {
           ...params,
         },
       });
-      return anexo;
+      return attachment;
     } catch (error) {
-      throw new AppErrorInternal('Erro ao criar registro de anexo no banco');
+      throw new AppErrorInternal(
+        'Failed to create record of attachment in bank',
+      );
     }
   }
 
-  private async relacionarArquivoUUID(params: {
-    nome: string;
-    tipo: string;
+  private async relateFileUUID(params: {
+    name: string;
+    type: string;
     url: string;
-    validade: Date;
-  }): Promise<ArquivoUUID> {
+    expiresAt: Date;
+  }): Promise<UuidFile> {
     try {
-      const anexo = await this.prisma.arquivoUUID.create({
+      const attachment = await this.prisma.uuidFile.create({
         data: {
-          nome: params.nome,
-          tipo: params.tipo,
+          name: params.name,
+          type: params.type,
           url: params.url,
-          validade: params.validade,
+          expiresAt: params.expiresAt,
         },
       });
-      return anexo;
+      return attachment;
     } catch (error) {
-      throw new AppErrorInternal('Erro ao criar registro de anexo no banco');
+      throw new AppErrorInternal(
+        'Failed to create record of attachment in bank',
+      );
     }
   }
 
-  private async uploadArquivo(file: Express.Multer.File): Promise<string[]> {
+  private async uploadFile(file: Express.Multer.File): Promise<string[]> {
     if (!file) {
-      throw new AppErrorBadRequest('Nenhum arquivo foi enviado.');
+      throw new AppErrorBadRequest('None file was sent.');
     }
     if (!file.originalname) {
-      throw new AppErrorBadRequest('Nome do arquivo inválido.');
+      throw new AppErrorBadRequest('Name of file invalid.');
     }
 
     try {
@@ -72,17 +76,19 @@ export class FileService {
       const [key, url] = await this.firebaseService.uploadFile(file);
       return [key, url];
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao fazer upload do arquivo: ${error.message}`);
+      throw new AppErrorInternal(
+        `Failed to perform upload of file: ${error.message}`,
+      );
     }
   }
 
-  async salvarArquivo(params: {
+  async saveFile(params: {
     file: Express.Multer.File;
-    usuarioId: string;
-    entidade: string;
-    entidadeId: string;
-  }): Promise<Arquivo> {
-    const { file, usuarioId, entidade, entidadeId } = params;
+    userId: string;
+    entity: string;
+    entityId: string;
+  }): Promise<File> {
+    const { file, userId, entity, entityId } = params;
 
     const allowedMimeTypes = [
       'image/jpeg',
@@ -103,7 +109,7 @@ export class FileService {
       'video/mov',
       'video/quicktime',
       'audio/ogg; codecs=opus',
-      // Adicionanto todos os documentos comuns
+      // Adicionanto all os documentos common
       'application/vnd.ms-excel', // xls
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
       'application/msword', // doc
@@ -122,207 +128,211 @@ export class FileService {
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new AppErrorBadRequest(
-        `Tipo de arquivo inválido. São aceitos um dos seguintes tipos: ${allowedMimeTypes.join(', ')}`,
+        `Type of file invalid. Accepts one of these types: ${allowedMimeTypes.join(', ')}`,
       );
     }
 
     try {
-      //pegando a extensão do arquivo
-      const extensao = file.originalname.split('.').pop();
+      //pegando a extensão of file
+      const extension = file.originalname.split('.').pop();
 
-      //criando um nome unico aleatorio para o arquivo
-      const nomeParaControle = `${usuarioId}-${entidade}-${entidadeId}.${extensao}`;
+      //criando um name unique random for o file
+      const nameForControl = `${userId}-${entity}-${entityId}.${extension}`;
 
-      // sanitizando e alterando o nome do arquivo para um nome único
+      // sanitizando and alterando o name of file for um name único
       const originalName = file.originalname;
-      file.originalname = nomeParaControle;
+      file.originalname = nameForControl;
 
-      // Faz o upload do arquivo
-      const [key, url] = await this.uploadArquivo(file);
+      // Faz o upload of file
+      const [key, url] = await this.uploadFile(file);
 
-      // 5 dias no futuro
-      const validade = new Date();
-      validade.setDate(validade.getDate() + 5);
+      // 5 days in futuro
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 5);
 
-      // Cria um registro do arquivo no banco de dados
-      const anexo = await this.relacionarArquivo({
-        usuarioId,
-        entidade,
-        entidadeId,
-        nome: key,
-        tamanho: file.size,
-        tipo: file.mimetype,
+      // Cria um registro of file in bank of data
+      const attachment = await this.relateFile({
+        userId,
+        entity,
+        entityId,
+        name: key,
+        size: file.size,
+        type: file.mimetype,
         url: url,
-        validade: validade,
+        expiresAt: expiresAt,
       });
 
-      // Restaura o nome original do arquivo (para não afetar outras operações)
+      // Restaura o name original of file (for não afetar outras operações)
       file.originalname = originalName;
 
-      return anexo;
+      return attachment;
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao salvar arquivo: ${error.message}`);
+      throw new AppErrorInternal(`Failed to save file: ${error.message}`);
     }
   }
 
-  async salvarArquivoUUID(params: {
+  async saveFileUUID(params: {
     file: Express.Multer.File;
     allowedMimeTypes: string[];
-  }): Promise<ArquivoUUID> {
+  }): Promise<UuidFile> {
     const { file, allowedMimeTypes } = params;
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new AppErrorBadRequest(
-        `Tipo de arquivo inválido. São aceitos um dos seguintes tipos: ${allowedMimeTypes.join(', ')}`,
+        `Type of file invalid. Accepts one of these types: ${allowedMimeTypes.join(', ')}`,
       );
     }
 
     try {
       const uuid = uuidv4();
 
-      //pegando a extensão do arquivo
-      const extensao = file.originalname.split('.').pop();
+      //pegando a extensão of file
+      const extension = file.originalname.split('.').pop();
 
-      //criando um nome unico aleatorio para o arquivo
-      const nomeParaControle = `${uuid}.${extensao}`;
+      //criando um name unique random for o file
+      const nameForControl = `${uuid}.${extension}`;
 
-      // Preserva o nome original
+      // Preserva o name original
       const originalName = file.originalname;
 
-      // sanitizando e alterando o nome do arquivo para um nome único
-      file.originalname = nomeParaControle;
+      // sanitizando and alterando o name of file for um name único
+      file.originalname = nameForControl;
 
-      // Faz o upload do arquivo
-      const [key, url] = await this.uploadArquivo(file);
+      // Faz o upload of file
+      const [key, url] = await this.uploadFile(file);
 
-      // 5 dias no futuro
-      const validade = new Date();
-      validade.setDate(validade.getDate() + 5);
+      // 5 days in futuro
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 5);
 
-      // Cria um registro do arquivo no banco de dados
-      const anexo = await this.relacionarArquivoUUID({
-        nome: key,
-        tipo: file.mimetype,
+      // Cria um registro of file in bank of data
+      const attachment = await this.relateFileUUID({
+        name: key,
+        type: file.mimetype,
         url: url,
-        validade: validade,
+        expiresAt: expiresAt,
       });
 
-      // Restaura o nome original
+      // Restaura o name original
       file.originalname = originalName;
 
-      return anexo;
+      return attachment;
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao salvar arquivo UUID: ${error.message}`);
+      throw new AppErrorInternal(`Failed to save file UUID: ${error.message}`);
     }
   }
 
-  async pegarArquivo(params: {
-    entidade: string;
-    entidadeId: string;
-    usuarioId: string;
-  }): Promise<Arquivo | null> {
-    const { entidade, entidadeId, usuarioId } = params;
+  async getFile(params: {
+    entity: string;
+    entityId: string;
+    userId: string;
+  }): Promise<File | null> {
+    const { entity, entityId, userId } = params;
 
     try {
-      let anexo = await this.prisma.arquivo.findFirst({
+      let attachment = await this.prisma.file.findFirst({
         where: {
-          usuarioId: usuarioId,
-          entidade: entidade,
-          entidadeId: entidadeId,
+          userId: userId,
+          entity: entity,
+          entityId: entityId,
         },
       });
 
-      if (!anexo) {
+      if (!attachment) {
         return null;
       }
 
-      const validadeDaUrl = new Date(anexo.validade);
-      const prazoSeguro = new Date();
-      prazoSeguro.setFullYear(prazoSeguro.getFullYear() + 9); // renovando a URL 1 ano antes do vencimento
+      const expiresAtOfUrl = new Date(attachment.expiresAt);
+      const deadlineSafe = new Date();
+      deadlineSafe.setFullYear(deadlineSafe.getFullYear() + 9); // renovando a URL 1 year before of vencimento
 
-      if (validadeDaUrl < prazoSeguro) {
+      if (expiresAtOfUrl < deadlineSafe) {
         try {
           // renovando a URL
-          const novoPrazo = new Date();
-          novoPrazo.setFullYear(novoPrazo.getFullYear() + 10); // 10 anos no futuro
-          const url = await this.firebaseService.fileUrl(anexo.nome);
-          anexo = await this.prisma.arquivo.update({
-            where: { id: anexo.id },
+          const newDeadline = new Date();
+          newDeadline.setFullYear(newDeadline.getFullYear() + 10); // 10 years in futuro
+          const url = await this.firebaseService.fileUrl(attachment.name);
+          attachment = await this.prisma.file.update({
+            where: { id: attachment.id },
             data: {
               url: url,
-              validade: novoPrazo,
+              expiresAt: newDeadline,
             },
           });
         } catch (error) {
-          throw new AppErrorInternal(`Erro ao renovar URL do arquivo: ${error.message}`);
+          throw new AppErrorInternal(
+            `Failed to renovar URL of file: ${error.message}`,
+          );
         }
       }
 
-      return anexo;
+      return attachment;
     } catch (error) {
       if (error instanceof AppErrorInternal) {
         throw error;
       }
-      throw new AppErrorInternal(`Erro ao buscar arquivo: ${error.message}`);
+      throw new AppErrorInternal(`Failed to find file: ${error.message}`);
     }
   }
 
-  async pegarArquivoPorId(id: string): Promise<Arquivo | null> {
+  async getFileById(id: string): Promise<File | null> {
     try {
-      const anexo = await this.prisma.arquivo.findUnique({
+      const attachment = await this.prisma.file.findUnique({
         where: { id: id },
       });
 
-      if (!anexo) {
+      if (!attachment) {
         return null;
       }
 
-      return await this.pegarArquivo({
-        entidade: anexo.entidade,
-        entidadeId: anexo.entidadeId,
-        usuarioId: anexo.usuarioId,
+      return await this.getFile({
+        entity: attachment.entity,
+        entityId: attachment.entityId,
+        userId: attachment.userId,
       });
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao buscar arquivo por ID: ${error.message}`);
+      throw new AppErrorInternal(`Failed to find file by ID: ${error.message}`);
     }
   }
 
-  async alterarEntidade(params: {
-    idArquivo: string;
-    entidade: string;
-    entidadeId: string;
-  }): Promise<Arquivo | null> {
-    const { idArquivo, entidade, entidadeId } = params;
+  async updateEntity(params: {
+    fileId: string;
+    entity: string;
+    entityId: string;
+  }): Promise<File | null> {
+    const { fileId, entity, entityId } = params;
 
     try {
-      const anexo = await this.prisma.arquivo.update({
-        where: { id: idArquivo },
+      const attachment = await this.prisma.file.update({
+        where: { id: fileId },
         data: {
-          entidade: entidade,
-          entidadeId: entidadeId,
+          entity: entity,
+          entityId: entityId,
         },
       });
 
-      return anexo;
+      return attachment;
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao alterar entidade do arquivo: ${error.message}`);
+      throw new AppErrorInternal(
+        `Failed to update entity of file: ${error.message}`,
+      );
     }
   }
 
-  async deletarArquivo(arquivoId: string): Promise<void> {
+  async deleteFile(fileId: string): Promise<void> {
     try {
-      const anexo = await this.prisma.arquivo.findUnique({
-        where: { id: arquivoId },
+      const attachment = await this.prisma.file.findUnique({
+        where: { id: fileId },
       });
 
-      if (!anexo) {
-        throw new AppErrorNotFound('Arquivo não encontrado');
+      if (!attachment) {
+        throw new AppErrorNotFound('File not found');
       }
 
-      await this.firebaseService.deleteFile(anexo.nome);
-      await this.prisma.arquivo.delete({
+      await this.firebaseService.deleteFile(attachment.name);
+      await this.prisma.file.delete({
         where: {
-          id: arquivoId,
+          id: fileId,
         },
       });
 
@@ -331,7 +341,7 @@ export class FileService {
       if (error instanceof AppErrorNotFound) {
         throw error;
       }
-      throw new AppErrorInternal(`Erro ao deletar arquivo: ${error.message}`);
+      throw new AppErrorInternal(`Failed to delete file: ${error.message}`);
     }
   }
 
@@ -348,7 +358,9 @@ export class FileService {
     try {
       return await this.firebaseService.getFileBuffer(key);
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao obter buffer do arquivo: ${error.message}`);
+      throw new AppErrorInternal(
+        `Failed to get buffer of file: ${error.message}`,
+      );
     }
   }
 
@@ -356,7 +368,9 @@ export class FileService {
     try {
       return await this.firebaseService.getUploadFileUrl(key);
     } catch (error) {
-      throw new AppErrorInternal(`Erro ao obter URL de upload: ${error.message}`);
+      throw new AppErrorInternal(
+        `Failed to get URL of upload: ${error.message}`,
+      );
     }
   }
 }

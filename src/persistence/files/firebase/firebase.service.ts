@@ -8,9 +8,10 @@ import { Bucket } from '@google-cloud/storage';
 
 @Injectable()
 export class FirebaseService {
-  private bucket: Bucket;
+  private storageBucket?: Bucket;
 
-  constructor() {
+  private get bucket(): Bucket {
+    if (this.storageBucket) return this.storageBucket;
     if (!admin.apps.length) {
       const firebaseConfig = getFirebaseConfig();
       admin.initializeApp({
@@ -19,11 +20,12 @@ export class FirebaseService {
           clientEmail: firebaseConfig.client_email,
           privateKey: firebaseConfig.private_key,
         }),
-        storageBucket: firebaseConfig.project_id + ".firebasestorage.app",
+        storageBucket: firebaseConfig.project_id + '.firebasestorage.app',
       });
     }
 
-    this.bucket = getStorage().bucket();
+    this.storageBucket = getStorage().bucket();
+    return this.storageBucket;
   }
 
   async uploadFile(file: Express.Multer.File): Promise<string[]> {
@@ -44,7 +46,7 @@ export class FirebaseService {
         stream.on('error', (error) => {
           reject(
             new Error(
-              'Erro ao fazer o upload para o Firebase: ' + error.message,
+              'Failed to perform o upload for the Firebase: ' + error.message,
             ),
           );
         });
@@ -60,7 +62,7 @@ export class FirebaseService {
       });
     } catch (error) {
       throw new Error(
-        'Erro ao fazer o upload para o Firebase: ' + error.message,
+        'Failed to perform o upload for the Firebase: ' + error.message,
       );
     }
   }
@@ -71,18 +73,18 @@ export class FirebaseService {
       const [exists] = await file.exists();
 
       if (!exists) {
-        throw new Error('Arquivo não encontrado');
+        throw new Error('File not found');
       }
 
       const [url] = await file.getSignedUrl({
         action: 'read',
-        expires: Date.now() + 60 * 60 * 24 * 365 * 10 * 1000, // 10 anos em milissegundos
+        expires: Date.now() + 60 * 60 * 24 * 365 * 10 * 1000, // 10 years at milissegundos
       });
 
       return url;
     } catch (error) {
       throw new Error(
-        'Erro ao obter URL do arquivo do Firebase: ' + error.message,
+        'Failed to get URL of file of Firebase: ' + error.message,
       );
     }
   }
@@ -93,7 +95,7 @@ export class FirebaseService {
       await file.delete();
       return { key };
     } catch (error) {
-      throw new Error('Erro ao excluir arquivo do Firebase: ' + error.message);
+      throw new Error('Failed to delete file of Firebase: ' + error.message);
     }
   }
 
@@ -113,13 +115,13 @@ export class FirebaseService {
       const [exists] = await file.exists();
 
       if (!exists) {
-        throw new Error('Arquivo não encontrado');
+        throw new Error('File not found');
       }
 
       const [buffer] = await file.download();
       return buffer;
     } catch (error) {
-      throw new Error('Erro ao obter arquivo do Firebase: ' + error.message);
+      throw new Error('Failed to get file of Firebase: ' + error.message);
     }
   }
 
@@ -129,13 +131,13 @@ export class FirebaseService {
 
       const [url] = await file.getSignedUrl({
         action: 'write',
-        expires: Date.now() + 5 * 1000, // 5 segundos em milissegundos
+        expires: Date.now() + 5 * 1000, // 5 segundos at milissegundos
         contentType: 'application/octet-stream',
       });
 
       return url;
     } catch (error) {
-      throw new Error('Erro ao obter URL do Firebase: ' + error.message);
+      throw new Error('Failed to get URL of Firebase: ' + error.message);
     }
   }
 
@@ -178,7 +180,7 @@ export class FirebaseService {
       return 'Fotos';
     }
 
-    // Documentos (todos os outros tipos)
+    // Documentos (all os other types)
     const documentTypes = [
       'application/pdf',
       'application/vnd.ms-excel',
@@ -194,14 +196,18 @@ export class FirebaseService {
       'application/x-7z-compressed',
       'application/x-tar',
       'application/gzip',
-      'application/x-bzip2'
+      'application/x-bzip2',
     ];
 
-    if (documentTypes.includes(mimetype) || mimetype.startsWith('application/') || mimetype.startsWith('text/')) {
+    if (
+      documentTypes.includes(mimetype) ||
+      mimetype.startsWith('application/') ||
+      mimetype.startsWith('text/')
+    ) {
       return 'Documentos';
     }
 
-    // Fallback para documentos se não identificar o tipo
+    // Fallback for documentos se não identificar o type
     return 'Documentos';
   }
 }

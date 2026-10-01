@@ -1,10 +1,17 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/is-public.decorator';
 
 type JwtInfo =
-  | { name?: 'TokenExpiredError' | 'JsonWebTokenError' | 'NotBeforeError'; message?: string }
+  | {
+      name?: 'TokenExpiredError' | 'JsonWebTokenError' | 'NotBeforeError';
+      message?: string;
+    }
   | any;
 
 @Injectable()
@@ -24,21 +31,29 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info?: JwtInfo, _context?: any, _status?: number) {
+  handleRequest(
+    err: any,
+    user: any,
+    info?: JwtInfo,
+    _context?: any,
+    _status?: number,
+  ) {
     if (err || !user) {
       const name = info?.name;
 
       if (name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Token expirado.');
+        throw new UnauthorizedException('Token expired.');
       }
       if (name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Token inválido.');
+        throw new UnauthorizedException('Invalid token.');
       }
       if (name === 'NotBeforeError') {
-        throw new UnauthorizedException('Token não está ativo ainda (nbf).');
+        throw new UnauthorizedException('Token not is active yet (nbf).');
       }
 
-      throw new UnauthorizedException('Sem autorização para acessar o conteúdo.');
+      throw new UnauthorizedException(
+        'Without authorization for access o content.',
+      );
     }
 
     return user;

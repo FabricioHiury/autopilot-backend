@@ -44,7 +44,7 @@ export class IsCpfConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage(): string {
-    return 'CPF inválido';
+    return 'CPF invalid';
   }
 }
 

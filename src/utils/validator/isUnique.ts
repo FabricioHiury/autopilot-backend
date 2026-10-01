@@ -36,13 +36,13 @@ export class IsUniqueConstraint implements ValidatorConstraintInterface {
       return !exists;
     } catch (error) {
       console.log(error);
-      this.message = 'Tabela ou coluna não encontrada.';
+      this.message = 'Table or column not found.';
       return false;
     }
   }
 
   defaultMessage(args: ValidationArguments): string {
-    return this.message || `${args.property} já está em uso.`;
+    return this.message || `${args.property} already is at uso.`;
   }
 }
 

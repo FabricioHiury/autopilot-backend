@@ -1,0 +1,345 @@
+export enum MODE_DEAL {
+  BUY = 'BUY',
+  SELL = 'SELL',
+  CONSIGNMENT = 'CONSIGNMENT',
+}
+
+export enum TEMPERATURE_DEAL {
+  HOT = 'HOT',
+  COLD = 'COLD',
+  WARM = 'WARM',
+}
+
+export enum STATUS_DEAL {
+  CHAT = 'chat',
+  PRE_DEAL = 'preDeal',
+  DEAL_INITIAL = 'dealInitial',
+  VISIT = 'visit',
+  AT_NEGOTIATION = 'atNegotiation',
+  RECOVERY = 'recovery',
+  SUCCESS = 'success',
+  LOST = 'lost',
+}
+
+export const STATUS_DEAL_MAP: { [key in STATUS_DEAL]: string } = {
+  [STATUS_DEAL.CHAT]: 'Chat',
+  [STATUS_DEAL.PRE_DEAL]: 'Pre-deal',
+  [STATUS_DEAL.DEAL_INITIAL]: 'Deal initial',
+  [STATUS_DEAL.VISIT]: 'Visit',
+  [STATUS_DEAL.AT_NEGOTIATION]: 'At negotiation',
+  [STATUS_DEAL.RECOVERY]: 'Recovery',
+  [STATUS_DEAL.SUCCESS]: 'Success',
+  [STATUS_DEAL.LOST]: 'Lost',
+};
+
+export enum ORIGIN_DEAL {
+  FACEBOOK = 'facebook',
+  INSTAGRAM = 'instagram',
+  WHATSAPP = 'whatsapp',
+  OLX = 'olx',
+  SHOWROOM = 'showroom',
+  USADOSBR = 'usadosbr',
+  ICARROS = 'icarros',
+  MOBIAUTO = 'mobiauto',
+  WEBMOTORS = 'webmotors',
+  CALL = 'call',
+  SITE = 'site',
+  PORTFOLIO = 'portfolio',
+  REFERRAL = 'referral',
+  OTHER = 'other',
+}
+
+export enum REASONS_LOSS_DEAL {
+  FINANCIAL_CREDIT = 'financialCredit',
+  PROPOSAL_VALUATION = 'proposalValuation',
+  INVENTORY_PRODUCT = 'inventoryProduct',
+  WITHOUT_RESULT = 'withoutResult',
+  COMPETITION_OTHER_STORE = 'competitionOtherStore',
+  INTEREST_INTENT = 'interestIntent',
+  OTHER_REASONS = 'otherReasons',
+}
+
+export enum SUB_REASONS_LOSS_DEAL {
+  // 1. Financeiro / Crédito
+  FINANCING_NOT_APPROVED = 'financingNotApproved',
+  SCORE_CREDIT_INSUFFICIENT = 'scoreCreditInsufficient',
+  INCOMING_VERY_LOW = 'incomingVeryLow',
+  VALUE_INSTALLMENT_INCOMPATIBLE_INCOME = 'valueInstallmentIncompatibleIncome',
+  CUSTOMER_WITHOUT_CREDIT_AVAILABLE = 'customerWithoutCreditAvailable',
+  CONDITION_FINANCING_NOT_ACCEPTED = 'conditionFinancingNotAccepted',
+  CUSTOMER_WITHDREW_AFTER_REJECTION = 'customerWithdrewAfterRejection',
+  BANK_REJECTED_PROPOSAL = 'bankRejectedProposal',
+  CUSTOMER_NOT_WANTED_PROVIDE_DATA_CREDIT = 'customerNotWantedProvideDataCredit',
+
+  // 2. Proposta / Avaliação
+  CUSTOMER_NOT_LIKED_VALUATION = 'customerNotLikedValuation',
+  PROPOSAL_INCOMPATIBLE_MARKET = 'proposalIncompatibleMarket',
+  VALUATION_BELOW_EXPECTED = 'valuationBelowExpected',
+  CUSTOMER_FOUND_PRICE_HIGH = 'customerFoundPriceHigh',
+  REQUEST_DISCOUNT_BEYOND_ALLOWED = 'requestDiscountBeyondAllowed',
+  STORE_NOT_ACCEPTED_VALUE_TRADEIN = 'storeNotAcceptedValueTradeIn',
+  VALUE_PROPOSAL_BELOW_EXPECTED = 'valueProposalBelowExpected',
+  DIFFERENCE_VALUES_NEGOTIATION = 'differenceValuesNegotiation',
+
+  // 3. Estoque / Produto
+  WITHOUT_VEHICLE_INTEREST_INVENTORY = 'withoutVehicleInterestInventory',
+  VEHICLE_WAS_SOLD_BEFORE_NEGOTIATION = 'vehicleWasSoldBeforeNegotiation',
+  VEHICLE_AWAITING_PREPARATION = 'vehicleAwaitingPreparation',
+  VEHICLE_RESERVED_OTHER_CUSTOMER = 'vehicleReservedOtherCustomer',
+  DOCUMENTATION_PENDING = 'documentationPending',
+  VEHICLE_TRADEIN_NOT_INTERESTS = 'vehicleTradeInNotInterests',
+  MODEL_DESIRED_NOT_SUPPORTED_STORE = 'modelDesiredNotSupportedStore',
+  COLOR_VERSION_UNAVAILABLE = 'colorVersionUnavailable',
+
+  // 4. Sem Retorno
+  CUSTOMER_NOT_REPLIED = 'customerNotReplied',
+  CUSTOMER_NOT_RETURNED_AFTER_PROPOSAL = 'customerNotReturnedAfterProposal',
+  CUSTOMER_BLOCKED_CONTACT = 'customerBlockedContact',
+  DATA_CONTACT_INCORRECT = 'dataContactIncorrect',
+  PHONE_WHATSAPP_INVALID = 'phoneWhatsappInvalid',
+  CUSTOMER_SAID_WOULDRETURN_NOT_RETURNED = 'customerSaidWouldReturnNotReturned',
+  CUSTOMER_IGNORED_MESSAGES = 'customerIgnoredMessages',
+  CUSTOMER_DISAPPEARED_AFTER_CONVERSATION_INITIAL = 'customerDisappearedAfterConversationInitial',
+
+  // 5. Concorrência / Outra Loja
+  CUSTOMER_NEGOTIATED_OTHER_STORE = 'customerNegotiatedOtherStore',
+  CUSTOMER_ALREADY_PURCHASED_OTHER_VEHICLE = 'customerAlreadyPurchasedOtherVehicle',
+  RECEIVED_PROPOSAL_BEST_COMPETITION = 'receivedProposalBestCompetition',
+  CHOSE_OTHER_MODEL_BRAND = 'choseOtherModelBrand',
+  PREFERRED_DEALERSHIP = 'preferredDealership',
+  PURCHASED_PRIVATE = 'purchasedPrivate',
+  CLOSED_OTHER_CITY = 'closedOtherCity',
+
+  // 6. Interesse / Intenção
+  CUSTOMER_WITHDREW_NEGOTIATION = 'customerWithdrewNegotiation',
+  CUSTOMER_POSTPONED_BUY = 'customerPostponedBuy',
+  CUSTOMER_THINKING = 'customerThinking',
+  CUSTOMER_ONLY_RESEARCHING = 'customerOnlyResearching',
+  WILL_WAIT_NEW_MODEL = 'willWaitNewModel',
+  WILL_BUY_NEXT_MONTH = 'willBuyNextMonth',
+  WILL_KEEP_CAR_CURRENT = 'willKeepCarCurrent',
+  CHANGED_IDEA_AFTER_CONVERSATION = 'changedIdeaAfterConversation',
+
+  // 7. Outros Motivos
+  CUSTOMER_NOT_CAME_STORE = 'customerNotCameStore',
+  LIVES_FAR_UNFEASIBLE_TRAVEL = 'livesFarUnfeasibleTravel',
+  BECAME_SICK_UNEXPECTED_PERSONAL = 'becameSickImprevistosPersonal',
+  DEAL_DUPLICATE = 'dealDuplicate',
+  CUSTOMER_SERVED_OTHER_SALESPERSON = 'customerServedOtherSalesperson',
+  CUSTOMER_PORTFOLIO_RELATIONSHIP_DIRECT = 'customerPortfolioRelationshipDirect',
+  TIMING_OUTSIDE_MOMENT_BUY = 'timingOutsideMomentBuy',
+  REQUESTED_PAUSE_TEMPORARY = 'requestedPauseTemporary',
+  OTHER_REASON = 'otherReason',
+}
+
+export const SUBREASONS_BY_REASON: {
+  [key in REASONS_LOSS_DEAL]: SUB_REASONS_LOSS_DEAL[];
+} = {
+  // Financeiro / Crédito
+  [REASONS_LOSS_DEAL.FINANCIAL_CREDIT]: [
+    SUB_REASONS_LOSS_DEAL.FINANCING_NOT_APPROVED,
+    SUB_REASONS_LOSS_DEAL.SCORE_CREDIT_INSUFFICIENT,
+    SUB_REASONS_LOSS_DEAL.INCOMING_VERY_LOW,
+    SUB_REASONS_LOSS_DEAL.VALUE_INSTALLMENT_INCOMPATIBLE_INCOME,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHOUT_CREDIT_AVAILABLE,
+    SUB_REASONS_LOSS_DEAL.CONDITION_FINANCING_NOT_ACCEPTED,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHDREW_AFTER_REJECTION,
+    SUB_REASONS_LOSS_DEAL.BANK_REJECTED_PROPOSAL,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_WANTED_PROVIDE_DATA_CREDIT,
+  ],
+
+  // Proposta / Avaliação
+  [REASONS_LOSS_DEAL.PROPOSAL_VALUATION]: [
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_LIKED_VALUATION,
+    SUB_REASONS_LOSS_DEAL.PROPOSAL_INCOMPATIBLE_MARKET,
+    SUB_REASONS_LOSS_DEAL.VALUATION_BELOW_EXPECTED,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_FOUND_PRICE_HIGH,
+    SUB_REASONS_LOSS_DEAL.REQUEST_DISCOUNT_BEYOND_ALLOWED,
+    SUB_REASONS_LOSS_DEAL.STORE_NOT_ACCEPTED_VALUE_TRADEIN,
+    SUB_REASONS_LOSS_DEAL.VALUE_PROPOSAL_BELOW_EXPECTED,
+    SUB_REASONS_LOSS_DEAL.DIFFERENCE_VALUES_NEGOTIATION,
+  ],
+
+  // Estoque / Produto
+  [REASONS_LOSS_DEAL.INVENTORY_PRODUCT]: [
+    SUB_REASONS_LOSS_DEAL.WITHOUT_VEHICLE_INTEREST_INVENTORY,
+    SUB_REASONS_LOSS_DEAL.VEHICLE_WAS_SOLD_BEFORE_NEGOTIATION,
+    SUB_REASONS_LOSS_DEAL.VEHICLE_AWAITING_PREPARATION,
+    SUB_REASONS_LOSS_DEAL.VEHICLE_RESERVED_OTHER_CUSTOMER,
+    SUB_REASONS_LOSS_DEAL.DOCUMENTATION_PENDING,
+    SUB_REASONS_LOSS_DEAL.VEHICLE_TRADEIN_NOT_INTERESTS,
+    SUB_REASONS_LOSS_DEAL.MODEL_DESIRED_NOT_SUPPORTED_STORE,
+    SUB_REASONS_LOSS_DEAL.COLOR_VERSION_UNAVAILABLE,
+  ],
+
+  // Sem Retorno
+  [REASONS_LOSS_DEAL.WITHOUT_RESULT]: [
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_REPLIED,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_RETURNED_AFTER_PROPOSAL,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_BLOCKED_CONTACT,
+    SUB_REASONS_LOSS_DEAL.DATA_CONTACT_INCORRECT,
+    SUB_REASONS_LOSS_DEAL.PHONE_WHATSAPP_INVALID,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_SAID_WOULDRETURN_NOT_RETURNED,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_IGNORED_MESSAGES,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_DISAPPEARED_AFTER_CONVERSATION_INITIAL,
+  ],
+
+  // Concorrência / Outra Loja
+  [REASONS_LOSS_DEAL.COMPETITION_OTHER_STORE]: [
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NEGOTIATED_OTHER_STORE,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_ALREADY_PURCHASED_OTHER_VEHICLE,
+    SUB_REASONS_LOSS_DEAL.RECEIVED_PROPOSAL_BEST_COMPETITION,
+    SUB_REASONS_LOSS_DEAL.CHOSE_OTHER_MODEL_BRAND,
+    SUB_REASONS_LOSS_DEAL.PREFERRED_DEALERSHIP,
+    SUB_REASONS_LOSS_DEAL.PURCHASED_PRIVATE,
+    SUB_REASONS_LOSS_DEAL.CLOSED_OTHER_CITY,
+  ],
+
+  // Interesse / Intenção
+  [REASONS_LOSS_DEAL.INTEREST_INTENT]: [
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHDREW_NEGOTIATION,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_POSTPONED_BUY,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_THINKING,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_ONLY_RESEARCHING,
+    SUB_REASONS_LOSS_DEAL.WILL_WAIT_NEW_MODEL,
+    SUB_REASONS_LOSS_DEAL.WILL_BUY_NEXT_MONTH,
+    SUB_REASONS_LOSS_DEAL.WILL_KEEP_CAR_CURRENT,
+    SUB_REASONS_LOSS_DEAL.CHANGED_IDEA_AFTER_CONVERSATION,
+  ],
+
+  // Outros Motivos
+  [REASONS_LOSS_DEAL.OTHER_REASONS]: [
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_CAME_STORE,
+    SUB_REASONS_LOSS_DEAL.LIVES_FAR_UNFEASIBLE_TRAVEL,
+    SUB_REASONS_LOSS_DEAL.BECAME_SICK_UNEXPECTED_PERSONAL,
+    SUB_REASONS_LOSS_DEAL.DEAL_DUPLICATE,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_SERVED_OTHER_SALESPERSON,
+    SUB_REASONS_LOSS_DEAL.CUSTOMER_PORTFOLIO_RELATIONSHIP_DIRECT,
+    SUB_REASONS_LOSS_DEAL.TIMING_OUTSIDE_MOMENT_BUY,
+    SUB_REASONS_LOSS_DEAL.REQUESTED_PAUSE_TEMPORARY,
+    SUB_REASONS_LOSS_DEAL.OTHER_REASON,
+  ],
+};
+
+export const REASONS_LOSS_MAP: { [key in REASONS_LOSS_DEAL]: string } = {
+  [REASONS_LOSS_DEAL.FINANCIAL_CREDIT]: 'Financial/Credit',
+  [REASONS_LOSS_DEAL.PROPOSAL_VALUATION]: 'Proposal/Valuation',
+  [REASONS_LOSS_DEAL.INVENTORY_PRODUCT]: 'Inventory/Product',
+  [REASONS_LOSS_DEAL.WITHOUT_RESULT]: 'Without Result',
+  [REASONS_LOSS_DEAL.COMPETITION_OTHER_STORE]: 'Competition/Other Store',
+  [REASONS_LOSS_DEAL.INTEREST_INTENT]: 'Interest/Intent',
+  [REASONS_LOSS_DEAL.OTHER_REASONS]: 'Other Reasons',
+};
+
+export const SUB_REASONS_LOSS_MAP: { [key in SUB_REASONS_LOSS_DEAL]: string } =
+  {
+    // Financeiro / Crédito
+    [SUB_REASONS_LOSS_DEAL.FINANCING_NOT_APPROVED]: 'Financing not approved',
+    [SUB_REASONS_LOSS_DEAL.SCORE_CREDIT_INSUFFICIENT]:
+      'Score of credit insufficient',
+    [SUB_REASONS_LOSS_DEAL.INCOMING_VERY_LOW]: 'Incoming very low',
+    [SUB_REASONS_LOSS_DEAL.VALUE_INSTALLMENT_INCOMPATIBLE_INCOME]:
+      'Value of installment incompatible with income',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHOUT_CREDIT_AVAILABLE]:
+      'Customer without credit available',
+    [SUB_REASONS_LOSS_DEAL.CONDITION_FINANCING_NOT_ACCEPTED]:
+      'Condition of financing not accepted',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHDREW_AFTER_REJECTION]:
+      'Customer withdrew after rejection',
+    [SUB_REASONS_LOSS_DEAL.BANK_REJECTED_PROPOSAL]: 'Bank rejected a proposal',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_WANTED_PROVIDE_DATA_CREDIT]:
+      'Customer not wanted provide data of credit',
+
+    // Proposta / Avaliação
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_LIKED_VALUATION]:
+      'Customer not liked of valuation',
+    [SUB_REASONS_LOSS_DEAL.PROPOSAL_INCOMPATIBLE_MARKET]:
+      'Proposal incompatible with o market',
+    [SUB_REASONS_LOSS_DEAL.VALUATION_BELOW_EXPECTED]:
+      'Valuation below of expected',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_FOUND_PRICE_HIGH]:
+      'Customer found o price high',
+    [SUB_REASONS_LOSS_DEAL.REQUEST_DISCOUNT_BEYOND_ALLOWED]:
+      'Request of discount beyond of allowed',
+    [SUB_REASONS_LOSS_DEAL.STORE_NOT_ACCEPTED_VALUE_TRADEIN]:
+      'Store not accepted o value of tradeIn',
+    [SUB_REASONS_LOSS_DEAL.VALUE_PROPOSAL_BELOW_EXPECTED]:
+      'Value of proposal below of expected',
+    [SUB_REASONS_LOSS_DEAL.DIFFERENCE_VALUES_NEGOTIATION]:
+      'Difference of values in negotiation',
+
+    // Estoque / Produto
+    [SUB_REASONS_LOSS_DEAL.WITHOUT_VEHICLE_INTEREST_INVENTORY]:
+      'Without vehicle of interest in inventory',
+    [SUB_REASONS_LOSS_DEAL.VEHICLE_WAS_SOLD_BEFORE_NEGOTIATION]:
+      'Vehicle was sold before of negotiation',
+    [SUB_REASONS_LOSS_DEAL.VEHICLE_AWAITING_PREPARATION]:
+      'Vehicle awaiting preparation',
+    [SUB_REASONS_LOSS_DEAL.VEHICLE_RESERVED_OTHER_CUSTOMER]:
+      'Vehicle reserved for other customer',
+    [SUB_REASONS_LOSS_DEAL.DOCUMENTATION_PENDING]: 'Documentation pending',
+    [SUB_REASONS_LOSS_DEAL.VEHICLE_TRADEIN_NOT_INTERESTS]:
+      'Vehicle of tradeIn not interests',
+    [SUB_REASONS_LOSS_DEAL.MODEL_DESIRED_NOT_SUPPORTED_STORE]:
+      'Model desired not is supported by the store',
+    [SUB_REASONS_LOSS_DEAL.COLOR_VERSION_UNAVAILABLE]:
+      'Color/Version unavailable',
+
+    // Sem Retorno
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_REPLIED]: 'Customer not replied',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_RETURNED_AFTER_PROPOSAL]:
+      'Customer not returned after proposal',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_BLOCKED_CONTACT]:
+      'Customer blocked o contact',
+    [SUB_REASONS_LOSS_DEAL.DATA_CONTACT_INCORRECT]: 'Data of contact incorrect',
+    [SUB_REASONS_LOSS_DEAL.PHONE_WHATSAPP_INVALID]: 'Phone/WhatsApp invalid',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_SAID_WOULDRETURN_NOT_RETURNED]:
+      'Customer said that wouldReturn, but not returned',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_IGNORED_MESSAGES]:
+      'Customer ignored the messages',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_DISAPPEARED_AFTER_CONVERSATION_INITIAL]:
+      'Customer disappeared after conversation initial',
+
+    // Concorrência / Outra Loja
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NEGOTIATED_OTHER_STORE]:
+      'Customer negotiated with other store',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_ALREADY_PURCHASED_OTHER_VEHICLE]:
+      'Customer already purchased other vehicle',
+    [SUB_REASONS_LOSS_DEAL.RECEIVED_PROPOSAL_BEST_COMPETITION]:
+      'Received proposal best of competition',
+    [SUB_REASONS_LOSS_DEAL.CHOSE_OTHER_MODEL_BRAND]: 'Chose other model/brand',
+    [SUB_REASONS_LOSS_DEAL.PREFERRED_DEALERSHIP]: 'Preferred dealership',
+    [SUB_REASONS_LOSS_DEAL.PURCHASED_PRIVATE]: 'Purchased of private',
+    [SUB_REASONS_LOSS_DEAL.CLOSED_OTHER_CITY]: 'Closed at other city',
+
+    // Interesse / Intenção
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_WITHDREW_NEGOTIATION]:
+      'Customer withdrew of negotiation',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_POSTPONED_BUY]: 'Customer postponed a buy',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_THINKING]: 'Customer is thinking',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_ONLY_RESEARCHING]:
+      'Customer estava only researching',
+    [SUB_REASONS_LOSS_DEAL.WILL_WAIT_NEW_MODEL]: 'Will wait new model',
+    [SUB_REASONS_LOSS_DEAL.WILL_BUY_NEXT_MONTH]: 'Will buy in next month',
+    [SUB_REASONS_LOSS_DEAL.WILL_KEEP_CAR_CURRENT]: 'Will keep o car current',
+    [SUB_REASONS_LOSS_DEAL.CHANGED_IDEA_AFTER_CONVERSATION]:
+      'Changed of idea after a conversation',
+
+    // Outros Motivos
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_NOT_CAME_STORE]:
+      'Customer not came to store',
+    [SUB_REASONS_LOSS_DEAL.LIVES_FAR_UNFEASIBLE_TRAVEL]:
+      'Lives far, unfeasible o travel',
+    [SUB_REASONS_LOSS_DEAL.BECAME_SICK_UNEXPECTED_PERSONAL]:
+      'Became sick/imprevistos pessoais',
+    [SUB_REASONS_LOSS_DEAL.DEAL_DUPLICATE]: 'Deal duplicate',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_SERVED_OTHER_SALESPERSON]:
+      'Customer served by other salesperson',
+    [SUB_REASONS_LOSS_DEAL.CUSTOMER_PORTFOLIO_RELATIONSHIP_DIRECT]:
+      'Customer of portfolio/relationship direct',
+    [SUB_REASONS_LOSS_DEAL.TIMING_OUTSIDE_MOMENT_BUY]:
+      'Timing outside of moment of buy',
+    [SUB_REASONS_LOSS_DEAL.REQUESTED_PAUSE_TEMPORARY]:
+      'Requested pause temporary',
+    [SUB_REASONS_LOSS_DEAL.OTHER_REASON]: 'Other reason',
+  };

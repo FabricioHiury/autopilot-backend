@@ -15,6 +15,6 @@ import { PrismaModule } from 'src/persistence/database/prisma/prisma.module';
     PrismaModule,
   ],
   providers: [FileService, MulterConfigService],
-  exports: [FileService]
+  exports: [FileService],
 })
 export class FileModule {}

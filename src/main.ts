@@ -11,10 +11,11 @@ import * as bodyParser from 'body-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use('/webhook/stripe', bodyParser.raw({ type: 'application/json' }));
-
   app.use((req, res, next) => {
-    if (req.path.includes('/mensagem/receber') || req.path.includes('/mensagem/resposta')) {
+    if (
+      req.path.includes('/message/receive') ||
+      req.path.includes('/message/reply')
+    ) {
       req.setTimeout(30000);
       res.setTimeout(30000);
     } else {
@@ -30,11 +31,11 @@ async function bootstrap() {
   // CONFIGURAÇÃO DO SWAGGER
   const config = new DocumentBuilder()
     .setTitle('API')
-    .setDescription('Documentação da API')
+    .setDescription('Documentation of API')
     .setVersion('0.0')
     .addBearerAuth()
     .addTag('Auth')
-    .addTag('Usuario')
+    .addTag('User')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
@@ -62,14 +63,14 @@ async function bootstrap() {
       message: 'Health check',
     });
   });
-  
+
   // VALIDAÇÃO DE DADOS
   // Entrada
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: false,
-      forbidNonWhitelisted: false,
+      whitelist: true,
+      forbidNonWhitelisted: true,
     }),
   );
   // Saída
@@ -90,15 +91,16 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: true, //Definir especificamente quais endpoints podem acessar o backend
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', //Definir especificamente quais endpoints podem acessar o backend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept, Authorization, api-key',
+    allowedHeaders:
+      'Content-Type, Accept, Authorization, x-api-key, x-micro-token',
     credentials: true,
   });
 
   // HABILITA PORTA E INICIA A APLICAÇÃO
-  const porta = process.env.PORT || 3003;
-  await app.listen(porta);
-  console.log(`Aplicação executando na porta ${porta}`);
+  const port = process.env.PORT || 3003;
+  await app.listen(port);
+  console.log(`Application listening on port ${port}`);
 }
 bootstrap();

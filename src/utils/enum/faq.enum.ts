@@ -1,13 +1,12 @@
-export enum FaqCategoria {
-  INTEGRACAO = 'Integração',
+export enum FaqCategory {
+  INTEGRATION = 'Integration',
   CHAT = 'Chat',
-  ATENDIMENTOS = 'Atendimentos',
-  CONTA = 'Conta',
-  ASSINATURA = 'Assinatura',
-  OUTROS = 'Outros',
+  DEALS = 'Deals',
+  ACCOUNT = 'Account',
+  OTHER = 'Other',
 }
 
 export enum FaqStatus {
-  PUBLICADO = 'publicado',
-  RASCHUNHO = 'rascunho',
+  PUBLISHED = 'published',
+  DRAFT = 'draft',
 }
