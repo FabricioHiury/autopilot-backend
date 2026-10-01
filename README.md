@@ -340,5 +340,5 @@ src/
 
 ## 🔗 Repositórios Relacionados
 
-- **[autopilot-frontend](../autopilot-frontend)** — Frontend Next.js 14 (App Router) com White-Label Dinâmico e módulo AutoPilot IA.
-- **[autopilot-microservice](../autopilot-microservice)** — Gateway Omnichannel (Evolution API v2, Meta, OLX) com banco isolado.
+- **[autopilot-frontend](https://github.com/FabricioHiury/autopilot-frontend)** — Frontend Next.js 14 (App Router) com White-Label Dinâmico e módulo AutoPilot IA.
+- **[autopilot-microservice](https://github.com/FabricioHiury/autopilot-microservice)** — Gateway Omnichannel (Evolution API v2, Meta, OLX) com banco isolado.

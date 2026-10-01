@@ -1,7 +1,7 @@
 # 📋 Planejamento de Implementação: Boilerplate CRM White-Label + AutoPilot IA
 
 > **Projeto**: AutoPilot CRM (Backend Boilerplate Multi-Tenant)  
-> **Repositório**: `autopilot-back` (NestJS + Prisma + PostgreSQL + Redis + Socket.io)  
+> **Repositório**: `autopilot-backend` (NestJS + Prisma + PostgreSQL + Redis + Socket.io)  
 > **Foco**: Concessionárias e Revendas de Veículos  
 > **Domínio Único**: `app.autopilotcrm.com` (Login unificado com injeção dinâmica de branding pós-autenticação por concessionária)  
 > **Principais Pilares**:
