@@ -32,4 +32,4 @@ Recent history uses prefixes such as `feat:`, `refactor:`, and `docs:`. Keep com
 
 ## Security & Configuration
 
-Never commit secrets, credential JSON, logs, or generated builds. Use `.env.example` as the configuration reference. Match `MICROSERVICE_TOKEN` across services. Read `docs/MIGRATION.md` before migrating existing databases; inspect the target database before executing migration commands.
+Never commit secrets, credential JSON, logs, or generated builds. Use `.env.example` as the configuration reference. Match `MICROSERVICE_TOKEN` across services. Keep versioned SQL migrations in `prisma/migrations/`; inspect the target database before executing migration commands.
