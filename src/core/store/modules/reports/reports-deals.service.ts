@@ -6409,7 +6409,7 @@ export class ReportsDealsService {
     });
 
     if (salespeople.length === 0) {
-      throw new NotFoundException('None salesperson found in store');
+      return [];
     }
 
     const deals = await this.prismaService.deal.findMany({

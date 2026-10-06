@@ -11,7 +11,7 @@ npm run migrate:deploy
 npm run dev
 ```
 
-Use `migrate:deploy` directly only for a **new database**. Existing installations must follow [the migration guide](docs/MIGRATION.md) before starting this version. This release changes API routes, fields, enums and physical database names and removes billing data.
+Run `npm run migrate:deploy` to apply the versioned migrations in `prisma/migrations/`. Inspect `DATABASE_URL` before running database commands.
 
 The API defaults to port 3003. Swagger is at `/api`, Scalar at `/docs`, and the health endpoint is `/health`. Set `FRONTEND_URL` to the single frontend origin. Configure JWT secrets, PostgreSQL, Redis and the shared microservice token in `.env`. Firebase credentials are needed when using file storage. SMTP and Novu are needed only for their respective integrations.
 

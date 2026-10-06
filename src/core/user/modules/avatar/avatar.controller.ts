@@ -57,5 +57,6 @@ export class AvatarController {
       res.redirect(url);
       return;
     }
+    res.status(204).end();
   }
 }

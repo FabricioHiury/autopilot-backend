@@ -32,9 +32,11 @@ export class StoreService {
 
   private instanceAxios() {
     return axios.create({
-      baseURL: process.env.API_BASE_URL.trim(),
+      baseURL: (
+        process.env.MICROSERVICE_URL || process.env.API_BASE_URL
+      )?.trim(),
       headers: {
-        'x-micro-token': process.env.API_KEY,
+        'x-micro-token': process.env.MICROSERVICE_TOKEN || process.env.API_KEY,
       },
     });
   }

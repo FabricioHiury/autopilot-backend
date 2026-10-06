@@ -2226,19 +2226,22 @@ export class ChatService {
       const resp = await this.apiHttp.post<any>(
         `/communication/whatsapp/verify-number`,
         {
-          storeId: storeId,
-          number,
+          storeId,
+          phone: number,
         },
       );
 
-      const data = resp.data?.data;
-      if (!data) {
+      const payload = resp.data?.data;
+      const data = Array.isArray(payload) ? payload[0] : payload;
+      if (!data || typeof data.exists !== 'boolean') {
         throw new AppErrorBadRequest('Reply invalid of microservice');
       }
 
       return {
-        exists: data.exists || false,
-        number: data.exists ? number : null,
+        exists: data.exists,
+        number: data.exists
+          ? (data.jid?.split('@')[0] || data.number || number).replace(/\D+/g, '')
+          : null,
         numberSearch: number,
       };
     } catch (error) {

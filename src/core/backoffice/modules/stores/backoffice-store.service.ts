@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/persistence/database/prisma/prisma.service';
 import { getStringUrlAvatar } from 'src/utils/avatarUtils';
@@ -17,10 +17,11 @@ export class BackofficeStoreService {
 
   private instanceAxios() {
     return axios.create({
-      baseURL: process.env.API_BASE_URL,
+      baseURL: process.env.MICROSERVICE_URL || process.env.API_BASE_URL,
       headers: {
-        'x-micro-token': process.env.API_KEY,
+        'x-micro-token': process.env.MICROSERVICE_TOKEN || process.env.API_KEY,
       },
+      timeout: 10000,
     });
   }
 
@@ -116,6 +117,7 @@ export class BackofficeStoreService {
       },
       select: {
         id: true,
+        wppInstance: true,
       },
     });
 
@@ -123,22 +125,28 @@ export class BackofficeStoreService {
       throw new AppErrorNotFound('Store not found');
     }
 
-    const token = await this.prismaService.store.update({
+    const instanceId = store.wppInstance || uuidv4();
+
+    try {
+      await this.instanceAxios().put('/integrations/whatsapp', {
+        instanceId,
+        storeId: store.id,
+      });
+    } catch {
+      throw new AppErrorInternal(
+        'Failed to enable WhatsApp integration. Check the microservice configuration.',
+      );
+    }
+
+    return await this.prismaService.store.update({
       where: {
         id: store.id,
       },
       data: {
         integrationsEnabled: true,
         wppConfigured: true,
-        wppInstance: uuidv4(),
+        wppInstance: instanceId,
       },
     });
-
-    await this.instanceAxios().put(`/integrations/whatsapp`, {
-      instanceId: token.wppInstance,
-      storeId: String(store.id),
-    });
-
-    return token;
   }
 }
