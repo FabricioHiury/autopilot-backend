@@ -80,6 +80,7 @@ export class AvatarService {
       select: { photoUrl: true },
     });
 
+    if (!user) throw new AppErrorNotFound('User not found');
     return user.photoUrl || null;
   }
 }

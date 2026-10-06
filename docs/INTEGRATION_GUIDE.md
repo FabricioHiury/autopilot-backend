@@ -227,6 +227,13 @@ Dispara e-mail de recuperação. Sem autenticação.
 
 > `channel` aceita: `whatsapp` | `instagram` | `facebook` | `olx` | `other`
 
+A verificação pelo frontend aceita `{ "number": "5561999999999" }` em
+`POST /integrations/whatsapp/verify-number`, ou `?number=5561999999999` em
+`GET /chats/number-whatsapp-available`. O backend envia `{ storeId, phone }`
+ao microservice em `POST /communication/whatsapp/verify-number` e adapta a lista
+retornada pelo Evolution para `{ exists, number, numberSearch }`. Quando disponível,
+`number` usa o número confirmado pelo provedor, sem o sufixo do JID.
+
 ---
 
 ### WebSocket (tempo real)
