@@ -9,6 +9,11 @@ export async function downloadFileContentSafe(
     timeout: 15000,
     maxRedirects: 3,
   });
+  const contentType = res.headers['content-type'];
+  const mimeType =
+    typeof contentType === 'string' && contentType
+      ? contentType
+      : 'application/octet-stream';
 
   let loaded = 0;
   const chunks: Buffer[] = [];
@@ -27,7 +32,7 @@ export async function downloadFileContentSafe(
       res.data.on('end', () => {
         resolve({
           fileBuffer: Buffer.concat(chunks),
-          mimeType: res.headers['content-type'] || 'application/octet-stream',
+          mimeType,
         });
       });
 

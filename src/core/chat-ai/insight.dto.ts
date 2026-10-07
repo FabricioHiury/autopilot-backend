@@ -42,3 +42,48 @@ export class InsightDto {
   @MaxLength(2000, { each: true })
   quickReplies: string[];
 }
+
+export const INSIGHT_RESPONSE_FORMAT = {
+  type: 'json_schema',
+  json_schema: {
+    name: 'chat_insight',
+    strict: true,
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['leadDossier', 'nextBestAction', 'quickReplies'],
+      properties: {
+        leadDossier: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'vehicleOfInterest',
+            'hasTradeIn',
+            'tradeInVehicle',
+            'paymentMethod',
+            'perceivedTemperature',
+            'mainObjection',
+          ],
+          properties: {
+            vehicleOfInterest: { type: ['string', 'null'], maxLength: 1000 },
+            hasTradeIn: { type: ['boolean', 'null'] },
+            tradeInVehicle: { type: ['string', 'null'], maxLength: 1000 },
+            paymentMethod: { type: ['string', 'null'], maxLength: 1000 },
+            perceivedTemperature: {
+              type: 'string',
+              enum: ['HOT', 'WARM', 'COLD', 'UNKNOWN'],
+            },
+            mainObjection: { type: ['string', 'null'], maxLength: 2000 },
+          },
+        },
+        nextBestAction: { type: 'string', maxLength: 2000 },
+        quickReplies: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 3,
+          items: { type: 'string', maxLength: 2000 },
+        },
+      },
+    },
+  },
+};
