@@ -1,6 +1,6 @@
 # Desenvolvimento local com Colima
 
-O `docker-compose.local.yml` na raiz sobe apenas PostgreSQL, Redis e Evolution.
+O `docker-compose.local.yml` na raiz sobe PostgreSQL, Redis, Evolution e Ollama.
 Os volumes são exclusivos do projeto `autopilot-local`. As aplicações rodam no
 host com `npm run dev`. O Compose original permanece disponível.
 
@@ -18,6 +18,7 @@ docker-compose --context colima --env-file .env.local -f docker-compose.local.ym
 | PostgreSQL | `127.0.0.1:55432` |
 | Redis | `127.0.0.1:56379` |
 | Evolution | `http://localhost:8080` |
+| Ollama | `http://localhost:11434` |
 
 PostgreSQL usa usuário/senha `autopilot`/`autopilot` e cria os bancos `autopilot`,
 `autopilot_micro` e `evolution` na primeira inicialização do volume.
@@ -85,3 +86,32 @@ docker-compose --context colima --env-file .env.local -f docker-compose.local.ym
 
 O banco local começa vazio, sem usuários de teste. Pareamento WhatsApp e demais
 integrações externas dependem das respectivas contas e configurações.
+
+## IA local com Ollama
+
+Baixe o modelo uma vez; ele permanece no volume `ollama_data`:
+
+```bash
+docker-compose --context colima --env-file .env.local -f docker-compose.local.yml up -d ollama
+docker-compose --context colima --env-file .env.local -f docker-compose.local.yml exec -T ollama ollama pull gemma3:1b
+```
+
+Adicione ao `.env.local` e reinicie o backend carregando esse arquivo:
+
+```dotenv
+CHAT_AI_URL=http://127.0.0.1:11434/v1/chat/completions
+CHAT_AI_MODEL=gemma3:1b
+CHAT_AI_API_KEY=ollama
+```
+
+O valor `ollama` é local e não exige cadastro: o servidor ignora a chave, mas o
+backend exige um valor para habilitar a IA. O modelo roda pela CPU no Colima do
+Mac. Modelos maiores precisam de mais memória; o 1B serve para testes, e suas
+sugestões devem ser revisadas. O copiloto analisa conversas e sugere respostas;
+o envio continua dependendo da ação do usuário.
+O provedor deve aceitar `response_format` com `json_schema`; o backend continua
+validando a análise antes de salvá-la.
+
+```bash
+docker-compose --context colima --env-file .env.local -f docker-compose.local.yml logs -f ollama
+```

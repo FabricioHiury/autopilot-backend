@@ -124,7 +124,7 @@ export class IntegrationController {
   async getWhatsAppOfficialPhoneNumbers(
     @Query('wabaId') wabaId: string,
     @Query('accessToken') accessToken: string,
-  ) {
+  ): Promise<AxiosResponse> {
     return await this.integrationService.getWhatsAppOfficialPhoneNumbers(
       wabaId,
       accessToken,
@@ -245,3 +245,4 @@ export class IntegrationController {
     return { success: true, data: stats };
   }
 }
+import type { AxiosResponse } from 'axios';

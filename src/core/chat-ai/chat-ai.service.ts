@@ -14,7 +14,7 @@ import axios from 'axios';
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/persistence/database/prisma/prisma.service';
-import { InsightDto } from './insight.dto';
+import { InsightDto, INSIGHT_RESPONSE_FORMAT } from './insight.dto';
 import { SALES_CONSULTANT_PROMPT } from './prompts/sales-consultant';
 
 @Injectable()
@@ -147,16 +147,14 @@ export class ChatAiService {
             role: 'user',
             content: JSON.stringify({
               externalAdId: chat.externalAdId,
-              messages: [...messages]
-                .reverse()
-                .map((message) => ({
-                  sender: message.sender,
-                  text: message.content?.slice(0, 6000),
-                })),
+              messages: [...messages].reverse().map((message) => ({
+                sender: message.sender,
+                text: message.content?.slice(0, 6000),
+              })),
             }),
           },
         ],
-        response_format: { type: 'json_object' },
+        response_format: INSIGHT_RESPONSE_FORMAT,
         temperature: 0.2,
       },
       {

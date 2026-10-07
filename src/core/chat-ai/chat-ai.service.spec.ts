@@ -74,6 +74,22 @@ describe('Human-reviewed chat AI', () => {
       data: { choices: [{ message: { content: JSON.stringify(insight) } }] },
     });
     await service['analyze']('store-a', 'chat-1');
+    expect(axios.post).toHaveBeenCalledWith(
+      process.env.CHAT_AI_URL,
+      expect.objectContaining({
+        response_format: expect.objectContaining({
+          type: 'json_schema',
+          json_schema: expect.objectContaining({
+            strict: true,
+            schema: expect.objectContaining({
+              additionalProperties: false,
+              required: ['leadDossier', 'nextBestAction', 'quickReplies'],
+            }),
+          }),
+        }),
+      }),
+      expect.anything(),
+    );
     expect(prisma.chat.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: 'chat-1', storeId: 'store-a' },
