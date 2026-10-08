@@ -2,23 +2,37 @@
 
 O `docker-compose.local.yml` na raiz sobe PostgreSQL, Redis, Evolution e Ollama.
 Os volumes são exclusivos do projeto `autopilot-local`. As aplicações rodam no
-host com `npm run dev`. O Compose original permanece disponível.
+host com `pnpm dev`. O Compose original permanece disponível.
 
-Na raiz de `autopilot-backend`, use o `.env.local` já criado (ignorado pelo Git),
-com `MICROSERVICE_TOKEN`, `EVOLUTION_API_KEY`, `EVOLUTION_WEBHOOK_TOKEN` e
-`ENCRYPTION_KEY`. As chaves de Evolution e de webhook devem ser diferentes.
+Use Node.js 22 e pnpm 10.25.0. Os exemplos assumem backend, microservice e frontend
+em pastas irmãs. Configure o `.env` de cada API a partir de seu `.env.example` e
+instale as dependências com `pnpm install --frozen-lockfile`. Preserve arquivos
+de ambiente que já estejam configurados.
+
+Na raiz de `autopilot-backend`, crie o `.env.local` (ignorado pelo Git) com os
+segredos compartilhados. Um exemplo de estrutura, com valores a substituir:
+
+```dotenv
+MICROSERVICE_TOKEN=substitua-por-um-segredo-compartilhado
+EVOLUTION_API_KEY=substitua-por-uma-chave-da-api-evolution
+EVOLUTION_WEBHOOK_TOKEN=substitua-por-um-segredo-diferente-para-o-webhook
+ENCRYPTION_KEY=substitua-por-32-bytes-em-base64
+```
+
+As chaves de Evolution e de webhook devem ser diferentes. Para gerar um segredo,
+use `openssl rand -hex 32`; para `ENCRYPTION_KEY`, use `openssl rand -base64 32`.
 
 ```bash
 colima start
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml up -d
 ```
 
-| Serviço | Endereço no host |
-| --- | --- |
-| PostgreSQL | `127.0.0.1:55432` |
-| Redis | `127.0.0.1:56379` |
-| Evolution | `http://localhost:8080` |
-| Ollama | `http://localhost:11434` |
+| Serviço    | Endereço no host         |
+| ---------- | ------------------------ |
+| PostgreSQL | `127.0.0.1:55432`        |
+| Redis      | `127.0.0.1:56379`        |
+| Evolution  | `http://localhost:8080`  |
+| Ollama     | `http://localhost:11434` |
 
 PostgreSQL usa usuário/senha `autopilot`/`autopilot` e cria os bancos `autopilot`,
 `autopilot_micro` e `evolution` na primeira inicialização do volume.
@@ -27,16 +41,16 @@ Para gerar o Prisma e preparar o banco, execute diretamente em cada projeto:
 
 ```bash
 # autopilot-backend
-npx --no-install prisma generate
-DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public' npx --no-install prisma migrate deploy
+pnpm exec prisma generate
+DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public' pnpm exec prisma migrate deploy
 
 # autopilot-microservice
-npx --no-install prisma generate
-DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot_micro?schema=public' npx --no-install prisma db push --skip-generate
+pnpm exec prisma generate
+DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot_micro?schema=public' pnpm exec prisma db push --skip-generate
 ```
 
 Para iniciar cada API, abra um terminal na pasta do projeto e carregue os segredos
-locais antes de `npm run dev`:
+locais antes de `pnpm dev`:
 
 ```bash
 set -a
@@ -51,7 +65,7 @@ Backend:
 ```bash
 export DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public'
 export PORT=3003 MICROSERVICE_URL=http://localhost:3005 MICROSERVICE_WS_URL=http://localhost:3005/crm
-npm run dev
+pnpm dev
 ```
 
 Microservice:
@@ -61,17 +75,18 @@ export DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot_
 export PORT=3005 AUTOPILOT_URL=http://localhost:3003 APP_BASE_URL=http://localhost:3005
 export EVOLUTION_API_URL=http://localhost:8080
 export EVOLUTION_WEBHOOK_URL=http://host.docker.internal:3005/whatsapp/webhook/evolution
-npm run dev
+pnpm dev
 ```
 
 Frontend, em seu próprio terminal:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:3003 NEXT_PUBLIC_SOCKET_URL=http://localhost:3003 npm run dev
+NEXT_PUBLIC_API_URL=http://localhost:3003 NEXT_PUBLIC_SOCKET_URL=http://localhost:3003 pnpm dev
 ```
 
-Os processos iniciados nesta sessão estão em segundo plano e gravam os logs em
-`autopilot-backend/logs/local`. Acompanhe a partir da raiz do backend:
+Ao executar `pnpm dev` nos terminais, os logs aparecem diretamente em cada um.
+No ambiente local que foi iniciado em segundo plano, os logs foram redirecionados
+para `autopilot-backend/logs/local`. Acompanhe a partir da raiz do backend:
 
 ```bash
 tail -f logs/local/backend.log logs/local/microservice.log logs/local/frontend.log

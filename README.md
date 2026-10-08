@@ -1,82 +1,133 @@
-# AutoPilot CRM backend
+# AutoPilot — Backend do CRM
 
-NestJS 10 CRM API with Prisma 5, PostgreSQL, Redis and Socket.io. Code, models and API fields use English; existing source comments remain in Portuguese. Sales negotiations use `Deal`.
+O AutoPilot é um CRM para lojas e concessionárias de veículos. Centraliza contatos, atendimentos comerciais, conversas de diferentes canais, tarefas, visitas e acompanhamento da equipe. O AutoPilot IA auxilia o vendedor com análises e sugestões que precisam de revisão humana.
 
-## Setup
+Este repositório contém a API principal: autenticação, regras do CRM, isolamento por loja, permissões, administração da plataforma e persistência dos dados comerciais.
 
-```sh
+## Arquitetura
+
+| Projeto                  | Responsabilidade                                    | Porta local |
+| ------------------------ | --------------------------------------------------- | ----------- |
+| `autopilot-frontend`     | Interface da loja e backoffice, em português        | 3001        |
+| `autopilot-backend`      | API do CRM, autenticação, eventos e copiloto        | 3003        |
+| `autopilot-microservice` | Integrações com WhatsApp, Instagram, Facebook e OLX | 3005        |
+
+O navegador acessa o backend. O backend chama o microservice para operações dos canais; o microservice recebe callbacks dos provedores e entrega eventos ao CRM. O backend consulta o provedor de IA separadamente. Cada API possui seu próprio banco PostgreSQL.
+
+Stack: NestJS 10, TypeScript, Prisma 6.19.3, PostgreSQL, Redis e Socket.io. `Deal` é o nome usado no código para um atendimento/negociação comercial.
+
+## Funcionalidades atuais
+
+- Atendimentos de compra, venda e consignação, pipeline, etapas, temperatura, motivos de perda e distribuição de responsáveis.
+- Clientes, equipe, cargos, permissões, etiquetas, tarefas, visitas, comentários e histórico.
+- Conversas, anexos, mensagens padrão, leitura e acompanhamento de entrega.
+- Painel da loja e relatórios de canais, atendimentos e desempenho comercial.
+- Backoffice para concessionárias, administradores da plataforma, FAQ e chamados de suporte.
+- Identidade visual por loja: nome, cores, logos, favicon, horários e regras de comissão.
+- Copiloto de IA com dossiê, próxima ação e sugestões de resposta.
+
+O acesso depende da autenticação, do vínculo com a loja e das permissões. O sistema atual não aplica cobrança ou bloqueio por assinatura.
+
+## Desenvolvimento local
+
+Use Node.js 22 e pnpm 10.25.0 para manter o ambiente alinhado aos demais projetos. Os exemplos assumem os três repositórios em pastas irmãs.
+
+Na primeira configuração, copie `.env.example` para `.env` e ajuste as variáveis. Preserve os arquivos de ambiente que já estiverem configurados.
+
+```bash
 cp .env.example .env
-npm ci
-npm run migrate:deploy
-npm run dev
+pnpm install --frozen-lockfile
 ```
 
-Run `npm run migrate:deploy` to apply the versioned migrations in `prisma/migrations/`. Inspect `DATABASE_URL` before running database commands.
+O `postinstall` gera o cliente Prisma e compila o backend. A configuração do pnpm libera os scripts de instalação necessários para bcrypt e Prisma.
 
-The API defaults to port 3003. Swagger is at `/api`, Scalar at `/docs`, and the health endpoint is `/health`. Set `FRONTEND_URL` to the single frontend origin. Configure JWT secrets, PostgreSQL, Redis and the shared microservice token in `.env`. Firebase credentials are needed when using file storage. SMTP and Novu are needed only for their respective integrations.
+O ambiente integrado usa [docker-compose.local.yml](docker-compose.local.yml), com PostgreSQL, Redis, Evolution e Ollama no Colima. Backend, microservice e frontend rodam no host, com seus próprios logs:
 
-```sh
-npm run build
-npm test -- --runInBand
-npm run test:migrations
+```bash
+colima start
+docker-compose --context colima --env-file .env.local -f docker-compose.local.yml up -d
 ```
 
-Migration tests use isolated embedded PostgreSQL instances and never connect to `DATABASE_URL`.
+Antes desse comando, configure o `.env.local` conforme o [guia do ambiente local](docker/local/README.md). Ele documenta os segredos compartilhados, os bancos, a geração do Prisma, a inicialização de cada projeto e os logs.
 
-## Single-domain branding
+| Recurso               | Endereço local                                                                   |
+| --------------------- | -------------------------------------------------------------------------------- |
+| Banco do CRM          | `postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public`       |
+| Banco do microservice | `postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot_micro?schema=public` |
+| Redis                 | `127.0.0.1:56379`                                                                |
+| Evolution             | `http://localhost:8080`                                                          |
+| Ollama                | `http://localhost:11434`                                                         |
 
-All companies use the same domain. `POST /auth/login` accepts `email` and `password`, returns `storeId`, and includes `storeId` in the signed access token. Authenticated requests resolve tenant membership from the database. No tenant ID or hostname supplied by the frontend selects the store.
+As credenciais de banco acima pertencem exclusivamente ao Compose local. O PostgreSQL também cria o banco `evolution` na primeira inicialização do volume.
 
-- `GET /store/customization`: current store's branding; creates defaults for an existing store on first access.
-- `PUT /store/customization`: owner-only updates to logo URLs, favicon, colors, display name, slug, hours, working days and commission rules.
+Para preparar o banco do backend, confira a conexão antes de aplicar as migrações:
 
-The frontend loads this configuration after login and applies its CSS variables and images. `workingDays` uses 0 for Sunday through 6 for Saturday. Public slug lookup is not exposed. Slug is metadata, not a separate domain.
-
-## Messaging and realtime
-
-All provider operations go through `MICROSERVICE_URL` using `x-micro-token`. The core does not connect directly to Evolution, Meta or OLX.
-
-| Method | Route                                  | Purpose                           |
-| ------ | -------------------------------------- | --------------------------------- |
-| GET    | `/chats`                               | List chats                        |
-| GET    | `/chats/:chatId/messages`              | Message history                   |
-| POST   | `/chats/:chatId/messages`              | Send a human-approved message     |
-| PATCH  | `/chats/:chatId/read`                  | Mark chat read                    |
-| GET    | `/integrations/status`                 | Current store's channels          |
-| POST   | `/integrations/whatsapp/connect`       | Request session/QR code           |
-| DELETE | `/integrations/whatsapp`               | Disconnect                        |
-| POST   | `/integrations/whatsapp/verify-number` | Verify a number                   |
-| POST   | `/chat/messages/incoming`              | Trusted microservice ingress      |
-| POST   | `/leads/incoming`                      | Trusted microservice lead ingress |
-| POST   | `/chat/messages/ack`                   | Delivery status                   |
-
-Outbound messages use `POST /communication/messages` on the microservice. See [the communication contract](docs/COMMUNICATION.md) for payloads, acknowledgements, retry behavior and Socket.io events.
-
-Set `MICROSERVICE_WS_URL` to the Socket.io namespace exposed by the microservice to enable a reconnecting WebSocket client. Leave it empty to use inbound webhooks. There is no periodic fetch of messages from the microservice. A local worker retries persisted inbound events.
-
-Frontend clients connect to `/chats` with `auth: { token }`. The server joins the authenticated store room and emits `message:received`, `message:status`, `deal:created` and `autopilot:analysis-ready`. Redis Pub/Sub distributes events between API instances. Clients refresh history on reconnect because realtime notifications are not a replay log.
-
-## Chat AI
-
-- `GET /chats/:chatId/copilot`: persisted dossier and suggested replies.
-- `POST /chats/:chatId/copilot/refresh`: queue a new analysis; returns HTTP 202.
-
-Configure `CHAT_AI_URL`, `CHAT_AI_MODEL` and `CHAT_AI_API_KEY` for a chat-completions-compatible LLM endpoint. Without these values analysis is disabled and manual refresh returns 503. Requests use the last 15 messages and the external ad identifier. An ad ID does not provide vehicle specifications.
-
-Redis maintains the pending analysis queue, locks and insight cache; PostgreSQL holds the authoritative insight. Malformed provider output is rejected, failures are retried, and stale results are rescheduled. Analysis never sends a message or changes a deal's stage. A seller reviews a suggestion and explicitly sends it through the normal message endpoint.
-
-## CRM and removed modules
-
-Deals, tasks, visits, comments, customers, employees, roles, reports, support, notifications and administration are retained under English paths. Main deal routes are `/deals`, `/deals/:dealId/status`, `/deals/:dealId/tasks`, `/deals/:dealId/visits` and `/deals/:dealId/comments`. The status endpoint uses the existing deal-edit validation and permission checks. Swagger lists the complete contract.
-
-Stripe, billing webhooks, plans, subscriptions, subscription guards and the subscription revenue dashboard were removed. No subscription check blocks CRM use.
-
-## Local containers
-
-```sh
-docker compose up --build
+```bash
+DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public' pnpm exec prisma migrate deploy
 ```
 
-Compose creates an isolated PostgreSQL database and Redis with persistent volumes and exposes only API port 3003. Its database credentials are for local development. It deploys migrations automatically to that isolated database. Configure `MICROSERVICE_URL` with a hostname reachable from the API container (for a host service on Docker Desktop, usually `host.docker.internal`).
+Em um terminal do backend:
 
-The frontend, microservice and LLM provider are separate deployments and must implement the documented contracts. End-to-end provider validation requires those services and credentials.
+```bash
+set -a
+source .env.local
+set +a
+export DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot?schema=public'
+export REDIS_HOST=127.0.0.1 REDIS_PORT=56379 REDIS_USERNAME='' REDIS_PASSWORD=''
+export PORT=3003 FRONTEND_URL=http://localhost:3001 FRONT_URL=http://localhost:3001
+export MICROSERVICE_URL=http://localhost:3005 MICROSERVICE_WS_URL=http://localhost:3005/crm
+pnpm dev
+```
+
+Nest carrega `.env`; `.env.local` é carregado explicitamente pelo terminal. A instalação não cria usuários demonstrativos: o primeiro administrador da plataforma precisa ser provisionado para cadastrar as lojas pelo backoffice.
+
+## AutoPilot IA
+
+O copiloto analisa as últimas 15 mensagens e o identificador externo do anúncio. Retorna dados conhecidos do contato, temperatura percebida, próxima ação e de uma a três respostas sugeridas. O identificador do anúncio não fornece informações de estoque ou características do veículo.
+
+A IA é habilitada quando as três variáveis abaixo estão preenchidas no ambiente do backend:
+
+```dotenv
+CHAT_AI_URL=http://127.0.0.1:11434/v1/chat/completions
+CHAT_AI_MODEL=gemma3:1b
+CHAT_AI_API_KEY=ollama
+```
+
+O provedor precisa aceitar Chat Completions com `response_format: json_schema`. No ambiente local, o Ollama ignora a chave `ollama`; o backend exige um valor para habilitar a análise.
+
+```bash
+docker-compose --context colima --env-file .env.local -f docker-compose.local.yml exec -T ollama ollama pull gemma3:1b
+```
+
+Para trocar de modelo, baixe-o no Ollama, altere `CHAT_AI_MODEL` e reinicie o backend carregando o `.env.local`. Os modelos ficam no volume `ollama_data`. No Colima do Mac a inferência usa CPU; modelos maiores precisam de mais memória. O modelo 1B é uma opção leve para testes e tem limitações de qualidade.
+
+Redis mantém fila, locks e cache; PostgreSQL guarda a análise validada. Falhas são reagendadas e resultados de conversas que receberam novas mensagens são recalculados. A IA não envia mensagens nem altera negociações automaticamente. O vendedor confirma o envio e revisa qualquer aplicação de dados ao atendimento.
+
+## API, autenticação e eventos
+
+- Swagger: `http://localhost:3003/api`; Scalar: `http://localhost:3003/docs`.
+- Saúde do processo: `GET /health`.
+- Login: `POST /auth/login`; o JWT e o vínculo consultado no banco determinam a loja.
+- Conversas: `/chats`, `/chats/:chatId/messages` e `/chats/:chatId/read`.
+- Copiloto: `GET /chats/:chatId/copilot`; `POST /chats/:chatId/copilot/refresh` retorna HTTP 202.
+- Negociações: `/deals` e subrotas de status, tarefas, visitas e comentários.
+- Identidade da loja: `GET /store/customization`; alterações por `PUT` exigem o proprietário.
+
+As respostas seguem `{ message, statusCode, data }`. O frontend conecta ao namespace Socket.io `/chats` com `auth.token`. Eventos incluem `message:received`, `message:status`, `deal:created` e `autopilot:analysis-ready`; a sala é definida pela loja autenticada. A reconexão exige consultar novamente o histórico.
+
+Backend e microservice compartilham `MICROSERVICE_TOKEN` nas chamadas internas. `MICROSERVICE_WS_URL` habilita o transporte Socket.io `/crm`; quando ausente, a entrega usa HTTP. Eventos recebidos são persistidos e deduplicados. Veja o [contrato de comunicação](docs/COMMUNICATION.md) e o [guia de integração](docs/INTEGRATION_GUIDE.md).
+
+## Organização e verificação
+
+`src/core/` contém os módulos de negócio; `src/auth/`, autenticação; `src/persistence/`, banco e arquivos; `src/utils/`, utilitários e e-mails. O esquema e as migrações estão em `prisma/`. Os testes Jest ficam junto do código em arquivos `*.spec.ts`.
+
+```bash
+pnpm exec tsc --noEmit
+pnpm exec jest --runInBand
+pnpm build
+pnpm test:migrations
+```
+
+Os testes de migração usam PostgreSQL embarcado e isolado. SMTP atende aos fluxos de e-mail; Firebase é usado para arquivos; Novu atende às notificações integradas. Credenciais e contas dos provedores são necessárias para validar essas funcionalidades reais.
+
+O `docker-compose.yml` original continua disponível para executar o backend em container. Para o desenvolvimento integrado no Colima, use o Compose alternativo. Orientações para contribuir estão em [AGENTS.md](AGENTS.md).
