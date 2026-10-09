@@ -1,43 +1,43 @@
-# Desenvolvimento local com Colima
+# Local development with Colima
 
-O `docker-compose.local.yml` na raiz sobe PostgreSQL, Redis, Evolution e Ollama.
-Os volumes são exclusivos do projeto `autopilot-local`. As aplicações rodam no
-host com `pnpm dev`. O Compose original permanece disponível.
+The root `docker-compose.local.yml` starts PostgreSQL, Redis, Evolution, and Ollama.
+Volumes belong exclusively to the `autopilot-local` project. Applications run on
+the host with `pnpm dev`. The original Compose file remains available.
 
-Use Node.js 22 e pnpm 10.25.0. Os exemplos assumem backend, microservice e frontend
-em pastas irmãs. Configure o `.env` de cada API a partir de seu `.env.example` e
-instale as dependências com `pnpm install --frozen-lockfile`. Preserve arquivos
-de ambiente que já estejam configurados.
+Use Node.js 22 and pnpm 10.25.0. These examples assume the backend, microservice,
+and frontend are sibling directories. Configure each API's `.env` from its
+`.env.example` and install dependencies with `pnpm install --frozen-lockfile`.
+Preserve environment files that are already configured.
 
-Na raiz de `autopilot-backend`, crie o `.env.local` (ignorado pelo Git) com os
-segredos compartilhados. Um exemplo de estrutura, com valores a substituir:
+In the `autopilot-backend` root, create `.env.local` (ignored by Git) with the
+shared secrets. Example structure with values to replace:
 
 ```dotenv
-MICROSERVICE_TOKEN=substitua-por-um-segredo-compartilhado
-EVOLUTION_API_KEY=substitua-por-uma-chave-da-api-evolution
-EVOLUTION_WEBHOOK_TOKEN=substitua-por-um-segredo-diferente-para-o-webhook
-ENCRYPTION_KEY=substitua-por-32-bytes-em-base64
+MICROSERVICE_TOKEN=replace-with-a-shared-secret
+EVOLUTION_API_KEY=replace-with-an-evolution-api-key
+EVOLUTION_WEBHOOK_TOKEN=replace-with-a-different-webhook-secret
+ENCRYPTION_KEY=replace-with-32-base64-encoded-bytes
 ```
 
-As chaves de Evolution e de webhook devem ser diferentes. Para gerar um segredo,
-use `openssl rand -hex 32`; para `ENCRYPTION_KEY`, use `openssl rand -base64 32`.
+The Evolution API and webhook keys must differ. Generate a secret with
+`openssl rand -hex 32`; for `ENCRYPTION_KEY`, use `openssl rand -base64 32`.
 
 ```bash
 colima start
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml up -d
 ```
 
-| Serviço    | Endereço no host         |
+| Service    | Host address             |
 | ---------- | ------------------------ |
 | PostgreSQL | `127.0.0.1:55432`        |
 | Redis      | `127.0.0.1:56379`        |
 | Evolution  | `http://localhost:8080`  |
 | Ollama     | `http://localhost:11434` |
 
-PostgreSQL usa usuário/senha `autopilot`/`autopilot` e cria os bancos `autopilot`,
-`autopilot_micro` e `evolution` na primeira inicialização do volume.
+PostgreSQL uses `autopilot`/`autopilot` as its username/password and creates the
+`autopilot`, `autopilot_micro`, and `evolution` databases when the volume is first initialized.
 
-Para gerar o Prisma e preparar o banco, execute diretamente em cada projeto:
+To generate Prisma clients and prepare databases, run directly in each project:
 
 ```bash
 # autopilot-backend
@@ -49,8 +49,8 @@ pnpm exec prisma generate
 DATABASE_URL='postgresql://autopilot:autopilot@127.0.0.1:55432/autopilot_micro?schema=public' pnpm exec prisma db push --skip-generate
 ```
 
-Para iniciar cada API, abra um terminal na pasta do projeto e carregue os segredos
-locais antes de `pnpm dev`:
+To start each API, open a terminal in its project directory and load the local
+secrets before running `pnpm dev`:
 
 ```bash
 set -a
@@ -78,40 +78,40 @@ export EVOLUTION_WEBHOOK_URL=http://host.docker.internal:3005/whatsapp/webhook/e
 pnpm dev
 ```
 
-Frontend, em seu próprio terminal:
+Frontend, in its own terminal:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3003 NEXT_PUBLIC_SOCKET_URL=http://localhost:3003 pnpm dev
 ```
 
-Ao executar `pnpm dev` nos terminais, os logs aparecem diretamente em cada um.
-No ambiente local que foi iniciado em segundo plano, os logs foram redirecionados
-para `autopilot-backend/logs/local`. Acompanhe a partir da raiz do backend:
+When running `pnpm dev` in terminals, logs appear directly in each terminal.
+In the local environment started in the background, logs were redirected to
+`autopilot-backend/logs/local`. Follow them from the backend root:
 
 ```bash
 tail -f logs/local/backend.log logs/local/microservice.log logs/local/frontend.log
 ```
 
-Antes de iniciar outra instância, encerre os processos existentes; seus PIDs estão
-em `logs/local/*.pid`. Para parar apenas a infraestrutura, preservando os dados:
+Before starting another instance, stop existing processes; their PIDs are in
+`logs/local/*.pid`. To stop only infrastructure while preserving data:
 
 ```bash
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml stop
 ```
 
-O banco local começa vazio, sem usuários de teste. Pareamento WhatsApp e demais
-integrações externas dependem das respectivas contas e configurações.
+The local database starts empty, without test users. WhatsApp pairing and other
+external integrations depend on the respective accounts and configuration.
 
-## IA local com Ollama
+## Local AI with Ollama
 
-Baixe o modelo uma vez; ele permanece no volume `ollama_data`:
+Download the model once; it stays in the `ollama_data` volume:
 
 ```bash
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml up -d ollama
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml exec -T ollama ollama pull gemma3:1b
 ```
 
-Adicione ao `.env.local` e reinicie o backend carregando esse arquivo:
+Add these variables to `.env.local` and restart the backend with that file loaded:
 
 ```dotenv
 CHAT_AI_URL=http://127.0.0.1:11434/v1/chat/completions
@@ -119,13 +119,13 @@ CHAT_AI_MODEL=gemma3:1b
 CHAT_AI_API_KEY=ollama
 ```
 
-O valor `ollama` é local e não exige cadastro: o servidor ignora a chave, mas o
-backend exige um valor para habilitar a IA. O modelo roda pela CPU no Colima do
-Mac. Modelos maiores precisam de mais memória; o 1B serve para testes, e suas
-sugestões devem ser revisadas. O copiloto analisa conversas e sugere respostas;
-o envio continua dependendo da ação do usuário.
-O provedor deve aceitar `response_format` com `json_schema`; o backend continua
-validando a análise antes de salvá-la.
+The `ollama` value is local and does not require an account: the server ignores
+the key, but the backend requires a value to enable AI. The model runs on the CPU
+under Colima on Mac. Larger models require more memory; the 1B model is intended
+for testing, and its suggestions must be reviewed. The copilot analyzes
+conversations and suggests replies; sending still requires a user action.
+The provider must support `response_format` with `json_schema`; the backend
+continues to validate analysis before saving it.
 
 ```bash
 docker-compose --context colima --env-file .env.local -f docker-compose.local.yml logs -f ollama
